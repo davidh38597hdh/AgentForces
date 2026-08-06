@@ -2,23 +2,41 @@
 
 import { useState } from 'react';
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 
 export default function Dashboard() {
-  const [systemPrompt, setSystemPrompt] = useState('You are a research specialist agent on AgentxForce.');
+  const [systemPrompt, setSystemPrompt] = useState(
+    'You are a research specialist agent on AgentxForce.'
+  );
   const [agentName, setAgentName] = useState('Research Agent');
   const [input, setInput] = useState('');
 
   const { messages, sendMessage, status } = useChat({
-    api: '/api/chat',
-    body: { system: systemPrompt },
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
+  const getText = (m: any) => {
+    if (typeof m.content === 'string') return m.content;
+    if (Array.isArray(m.parts)) {
+      return m.parts
+        .filter((p: any) => p.type === 'text')
+        .map((p: any) => p.text || '')
+        .join('');
+    }
+    return '';
+  };
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    sendMessage({ text: input });
+    sendMessage(
+      { text: input },
+      { body: { system: systemPrompt } }
+    );
     setInput('');
   };
 
@@ -26,7 +44,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-black text-white p-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">AgentxForce Dashboard</h1>
-        <p className="text-gray-400 mb-8">Core agent runner (single agent streaming with Grok). Multi-agent sequential next.</p>
+        <p className="text-gray-400 mb-8">
+          Core agent runner (single agent streaming with Grok). Multi-agent sequential next.
+        </p>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800">
@@ -53,17 +73,14 @@ export default function Dashboard() {
             <p className="text-gray-500">Start a conversation with your agent...</p>
           )}
           {messages.map((m) => (
-            <div key={m.id} className={`mb-4 ${m.role === 'user' ? 'text-blue-300' : 'text-green-300'}`}>
-              <strong className="text-xs uppercase text-gray-500">{m.role === 'user' ? 'You' : agentName}</strong>
-              <p className="mt-1 whitespace-pre-wrap">
-                {typeof (m as any).content === 'string'
-                  ? (m as any).content
-                  : Array.isArray((m as any).parts)
-                  ? (m as any).parts
-                      .map((p: any) => (p.type === 'text' ? p.text : ''))
-                      .join('')
-                  : ''}
-              </p>
+            <div
+              key={m.id}
+              className={`mb-4 ${m.role === 'user' ? 'text-blue-300' : 'text-green-300'}`}
+            >
+              <strong className="text-xs uppercase text-gray-500">
+                {m.role === 'user' ? 'You' : agentName}
+              </strong>
+              <p className="mt-1 whitespace-pre-wrap">{getText(m)}</p>
             </div>
           ))}
           {isLoading && <p className="text-gray-500">Agent thinking...</p>}
@@ -87,7 +104,7 @@ export default function Dashboard() {
         </form>
 
         <p className="mt-6 text-sm text-gray-500">
-          Next: Sequential multi-agent orchestration (chain agents). Requires XAI_API_KEY in Vercel env.
+          Next: Sequential multi-agent orchestration. Requires XAI_API_KEY in Vercel env vars.
         </p>
       </div>
     </div>
