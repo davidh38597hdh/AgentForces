@@ -1,7 +1,7 @@
 import { xai } from '@ai-sdk/xai';
 import { generateText } from 'ai';
 
-export const maxDuration = 90;
+export const maxDuration = 60;
 
 type Agent = {
   name: string;
@@ -12,21 +12,19 @@ async function fetchUrlContent(url: string): Promise<string> {
   try {
     const res = await fetch(url, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (compatible; AgentxForce/1.0; +https://agentxforce.vercel.app)',
+        'User-Agent': 'Mozilla/5.0 (compatible; AgentxForce/1.0)',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return `[Failed to fetch ${url}: ${res.status}]`;
     const text = await res.text();
-    // Very light HTML stripping for readability
     const cleaned = text
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 6000);
+      .slice(0, 4000);
     return cleaned || `[No readable content from ${url}]`;
   } catch {
     return `[Could not fetch ${url}]`;
@@ -35,6 +33,15 @@ async function fetchUrlContent(url: string): Promise<string> {
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.XAI_API_KEY) {
+      return new Response(
+        JSON.stringify({
+          error: 'XAI_API_KEY is not set in Vercel environment variables.',
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const body = await req.json();
     const agents: Agent[] = body.agents || [];
     const task: string = body.task || '';
@@ -48,11 +55,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch any provided URLs
     let urlContent = '';
     if (urls.length > 0) {
       const fetched = await Promise.all(
-        urls.slice(0, 3).map(async (url) => {
+        urls.slice(0, 2).map(async (url) => {
           const content = await fetchUrlContent(url);
           return `### Source: ${url}\n${content}`;
         })
@@ -61,7 +67,6 @@ export async function POST(req: Request) {
     }
 
     let context = `Original task: ${task}\n\n`;
-
     if (contextText.trim()) {
       context += `### User-provided context / notes\n${contextText.trim()}\n\n`;
     }
@@ -71,11 +76,14 @@ export async function POST(req: Request) {
 
     const log: { agent: string; output: string }[] = [];
 
-    for (const agent of agents) {
+    // Limit to 3 agents max for reliability on serverless
+    const agentsToRun = agents.slice(0, 3);
+
+    for (const agent of agentsToRun) {
       const result = await generateText({
         model: xai('grok-3'),
         system: agent.system,
-        prompt: `${context}\nYou are the next agent in a multi-agent team. Your role is: ${agent.name}.\n\nBased on the original task, any provided context/sources, and previous agents' work above, provide your contribution.`,
+        prompt: `${context}\nYou are the next agent in a multi-agent team. Your role is: ${agent.name}.\n\nBased on the original task, any provided context/sources, and previous agents' work above, provide your contribution. Be concise and useful.`,
       });
 
       const output = result.text;
@@ -93,7 +101,9 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Orchestrate error:', error);
     return new Response(
-      JSON.stringify({ error: error?.message || 'Orchestration failed' }),
+      JSON.stringify({
+        error: error?.message || 'Orchestration failed',
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
