@@ -1,25 +1,26 @@
 # AgentxForce
 
-**Multi-Agent Orchestrator** – Build, connect, and run multi-agent networks powered by Grok and other frontier models.
+**Multi-Agent Teams Powered by Grok**
 
-## Features
-- Create agents with custom system prompts
-- Sequential multi-agent orchestration (output of one feeds the next)
-- Real-time execution logs
-- Grok-first via xAI API
-- Ready for Vercel deployment
+Create, connect, and run intelligent agent networks in minutes. No complex frameworks. Templates, real-time execution, shareable demos.
 
-## Getting Started
-1. Clone the repo
-2. `npm install`
-3. Set `XAI_API_KEY` in `.env.local`
-4. `npm run dev`
-5. Visit `/dashboard` to create and run multi-agent teams
+## Status
+- Landing + Waitlist
+- Core Grok agent streaming dashboard live
+- Sequential multi-agent orchestration next
 
-## Tech Stack
-- Next.js 15 (App Router)
-- TypeScript + Tailwind
-- Vercel AI SDK + @ai-sdk/xai
-- Streaming Grok responses
+## Tech
+- Next.js 15 + TypeScript + Tailwind
+- Grok / xAI primary via @ai-sdk/xai
+- Vercel deployment
 
-Built for speed, shareability on X, and monetization.
+## Development
+```bash
+npm install
+npm run dev
+```
+
+Requires `XAI_API_KEY` in environment for real Grok calls.
+
+## Vision
+A clean, shareable multi-agent orchestrator for builders who want real agent teams without the boilerplate.
