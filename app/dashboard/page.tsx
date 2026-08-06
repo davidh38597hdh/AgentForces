@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 
 export default function Dashboard() {
   const [systemPrompt, setSystemPrompt] = useState('You are a research specialist agent.');
