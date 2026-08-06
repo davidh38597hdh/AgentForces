@@ -9,7 +9,7 @@ type Agent = {
   system: string;
 };
 
-const ROLE_SUGGESTIONS = [
+const ROLES = [
   {
     name: 'Researcher',
     system:
@@ -27,56 +27,50 @@ const ROLE_SUGGESTIONS = [
   },
   {
     name: 'Writer',
-    system:
-      'You are a clear writer. Turn ideas into structured, readable content.',
+    system: 'You are a clear writer. Turn ideas into structured, readable content.',
   },
   {
     name: 'Critic',
     system:
       'You are a sharp critic. Challenge assumptions, find weak points, and suggest improvements.',
   },
-  {
-    name: 'Financial Analyst',
-    system:
-      'You are a practical financial analyst. Focus on numbers, assumptions, risks, and realistic projections.',
-  },
 ];
 
-function newAgent(index: number, preset?: { name: string; system: string }): Agent {
+function makeAgent(i: number, preset?: { name: string; system: string }): Agent {
   return {
-    id: `${Date.now()}-${index}`,
-    name: preset?.name || `Agent ${index}`,
+    id: `${Date.now()}-${i}`,
+    name: preset?.name ?? `Agent ${i}`,
     system:
-      preset?.system ||
+      preset?.system ??
       'You are a specialized agent. Be clear, useful, and focused on your role.',
   };
 }
 
 export default function Dashboard() {
-  const [agents, setAgents] = useState<Agent[]>([newAgent(1, ROLE_SUGGESTIONS[0])]);
+  const [agents, setAgents] = useState<Agent[]>([makeAgent(1, ROLES[0])]);
   const [task, setTask] = useState('');
-  const [contextText, setContextText] = useState('');
+  const [context, setContext] = useState('');
   const [urls, setUrls] = useState('');
   const [log, setLog] = useState<{ agent: string; output: string }[]>([]);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
 
-  const addAgent = (preset?: { name: string; system: string }) => {
+  const add = (preset?: { name: string; system: string }) => {
     if (agents.length >= 5) return;
-    setAgents([...agents, newAgent(agents.length + 1, preset)]);
+    setAgents([...agents, makeAgent(agents.length + 1, preset)]);
   };
 
-  const updateAgent = (id: string, field: 'name' | 'system', value: string) => {
+  const update = (id: string, field: 'name' | 'system', value: string) => {
     setAgents(agents.map((a) => (a.id === id ? { ...a, [field]: value } : a)));
   };
 
-  const removeAgent = (id: string) => {
+  const remove = (id: string) => {
     if (agents.length <= 1) return;
     setAgents(agents.filter((a) => a.id !== id));
   };
 
-  const runTeam = async () => {
-    if (!task.trim() || agents.length === 0) return;
+  const run = async () => {
+    if (!task.trim()) return;
     setRunning(true);
     setError('');
     setLog([]);
@@ -93,228 +87,179 @@ export default function Dashboard() {
         body: JSON.stringify({
           agents: agents.map(({ name, system }) => ({ name, system })),
           task,
-          contextText,
+          contextText: context,
           urls: urlList,
         }),
       });
 
-      const contentType = res.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        throw new Error(
-          'API /api/orchestrate did not return JSON. The route may be missing on this deploy.'
-        );
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        throw new Error('API did not return JSON. Check deploy.');
       }
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Orchestration failed');
+      if (!res.ok) throw new Error(data.error || 'Failed');
       setLog(data.log || []);
-    } catch (err: any) {
-      setError(
-        err.message ||
-          'Something went wrong. Confirm XAI_API_KEY is set in Vercel Environment Variables.'
-      );
+    } catch (e: any) {
+      setError(e.message || 'Something went wrong. Check XAI_API_KEY.');
     } finally {
       setRunning(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-blue-500/30">
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/15 via-transparent to-transparent pointer-events-none" />
+    <div className="min-h-screen bg-[#0a0a0a] text-zinc-100">
+      {/* Nav */}
+      <header className="border-b border-zinc-900">
+        <div className="max-w-2xl mx-auto px-5 h-12 flex items-center justify-between">
+          <Link href="/" className="text-sm font-medium tracking-tight text-zinc-300 hover:text-white">
+            AgentForce
+          </Link>
+          <span className="text-xs text-zinc-600">Orchestration</span>
+        </div>
+      </header>
 
-      <div className="relative">
-        <nav className="border-b border-white/5">
-          <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-[10px] font-bold text-black">
-                AX
-              </div>
-              <span className="font-medium tracking-tight text-sm">AgentxForce</span>
-            </Link>
-            <Link href="/" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
-              ← Home
-            </Link>
-          </div>
-        </nav>
+      <main className="max-w-2xl mx-auto px-5 py-12">
+        {/* Task */}
+        <section className="mb-10">
+          <textarea
+            value={task}
+            onChange={(e) => setTask(e.target.value)}
+            rows={2}
+            placeholder="What should the team do?"
+            className="w-full bg-transparent text-lg text-zinc-100 placeholder:text-zinc-600 border-0 border-b border-zinc-800 focus:border-zinc-500 focus:outline-none resize-none pb-3 leading-relaxed"
+          />
+        </section>
 
-        <div className="max-w-3xl mx-auto px-6 py-10">
-          <div className="mb-10">
-            <h1 className="text-2xl font-semibold tracking-tight mb-1">Build a team</h1>
-            <p className="text-sm text-zinc-500">
-              Start with one agent. Add more only when you need them. They run in order.
-            </p>
-          </div>
-
-          {/* Task first — primary input */}
-          <div className="mb-8">
-            <label className="block text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-              What should the team do?
-            </label>
-            <textarea
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              rows={3}
-              placeholder="e.g. Research competitors for my AI note-taking app and recommend a positioning angle"
-              className="w-full px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/10 text-sm focus:outline-none focus:border-blue-500/50 resize-none"
-            />
-          </div>
-
-          {/* Optional context */}
-          <details className="mb-8 group">
-            <summary className="text-xs font-medium text-zinc-500 uppercase tracking-wider cursor-pointer hover:text-zinc-300 list-none flex items-center gap-2">
-              <span className="text-zinc-600 group-open:rotate-90 transition-transform">›</span>
-              Optional context & URLs
+        {/* Context — minimal */}
+        <section className="mb-10">
+          <details className="group">
+            <summary className="text-xs text-zinc-600 cursor-pointer hover:text-zinc-400 select-none list-none">
+              + Context
             </summary>
-            <div className="mt-4 grid sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
-                <label className="block text-[11px] text-zinc-600 mb-2">Notes</label>
-                <textarea
-                  value={contextText}
-                  onChange={(e) => setContextText(e.target.value)}
-                  rows={3}
-                  placeholder="Product info, constraints, background..."
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-sm resize-none focus:outline-none focus:border-blue-500/50"
-                />
-              </div>
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10">
-                <label className="block text-[11px] text-zinc-600 mb-2">URLs (one per line)</label>
-                <textarea
-                  value={urls}
-                  onChange={(e) => setUrls(e.target.value)}
-                  rows={3}
-                  placeholder="https://example.com"
-                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-sm resize-none focus:outline-none focus:border-blue-500/50"
-                />
-              </div>
+            <div className="mt-4 space-y-3">
+              <textarea
+                value={context}
+                onChange={(e) => setContext(e.target.value)}
+                rows={2}
+                placeholder="Notes, background, constraints..."
+                className="w-full bg-zinc-900/50 rounded-lg px-3 py-2.5 text-sm text-zinc-300 placeholder:text-zinc-600 border border-zinc-800/80 focus:border-zinc-600 focus:outline-none resize-none"
+              />
+              <textarea
+                value={urls}
+                onChange={(e) => setUrls(e.target.value)}
+                rows={2}
+                placeholder="URLs (one per line)"
+                className="w-full bg-zinc-900/50 rounded-lg px-3 py-2.5 text-sm text-zinc-300 placeholder:text-zinc-600 border border-zinc-800/80 focus:border-zinc-600 focus:outline-none resize-none"
+              />
             </div>
           </details>
+        </section>
 
-          {/* Agents — progressive */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                Agents · run in order
-              </h2>
-              <span className="text-[11px] text-zinc-600">{agents.length} / 5</span>
-            </div>
-
-            <div className="space-y-3">
-              {agents.map((agent, idx) => (
-                <div key={agent.id} className="relative">
-                  {idx > 0 && (
-                    <div className="absolute -top-3 left-6 text-[10px] text-zinc-600">↓</div>
-                  )}
-                  <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/10">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs text-zinc-400 shrink-0">
-                        {idx + 1}
-                      </div>
-                      <input
-                        value={agent.name}
-                        onChange={(e) => updateAgent(agent.id, 'name', e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-sm font-medium focus:outline-none focus:border-blue-500/50"
-                        placeholder="Role name"
-                      />
-                      {agents.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeAgent(agent.id)}
-                          className="text-xs text-zinc-600 hover:text-red-400 transition-colors px-2"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <textarea
-                      value={agent.system}
-                      onChange={(e) => updateAgent(agent.id, 'system', e.target.value)}
-                      rows={2}
-                      className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-zinc-300 focus:outline-none focus:border-blue-500/50 resize-none"
-                      placeholder="What should this agent do?"
-                    />
+        {/* Agents */}
+        <section className="mb-10">
+          <div className="space-y-0">
+            {agents.map((agent, i) => (
+              <div key={agent.id}>
+                {i > 0 && (
+                  <div className="flex justify-center py-1">
+                    <div className="w-px h-4 bg-zinc-800" />
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Add more */}
-            {agents.length < 5 && (
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={() => addAgent()}
-                  className="w-full py-3 rounded-2xl border border-dashed border-white/10 text-sm text-zinc-500 hover:text-white hover:border-white/20 hover:bg-white/[0.02] transition-all"
-                >
-                  + Add next agent
-                </button>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="text-[11px] text-zinc-600 self-center mr-1">Quick roles:</span>
-                  {ROLE_SUGGESTIONS.filter(
-                    (r) => !agents.some((a) => a.name === r.name)
-                  )
-                    .slice(0, 4)
-                    .map((role) => (
+                )}
+                <div className="group relative rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-4 hover:border-zinc-700 transition-colors">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-[11px] text-zinc-600 tabular-nums w-4">{i + 1}</span>
+                    <input
+                      value={agent.name}
+                      onChange={(e) => update(agent.id, 'name', e.target.value)}
+                      className="flex-1 bg-transparent text-sm font-medium text-zinc-200 placeholder:text-zinc-600 focus:outline-none"
+                      placeholder="Role"
+                    />
+                    {agents.length > 1 && (
                       <button
-                        key={role.name}
                         type="button"
-                        onClick={() => addAgent(role)}
-                        className="px-2.5 py-1 rounded-lg text-[11px] border border-white/10 text-zinc-500 hover:text-white hover:bg-white/5 transition-all"
+                        onClick={() => remove(agent.id)}
+                        className="opacity-0 group-hover:opacity-100 text-xs text-zinc-600 hover:text-zinc-400 transition-opacity"
                       >
-                        + {role.name}
+                        Remove
                       </button>
-                    ))}
+                    )}
+                  </div>
+                  <textarea
+                    value={agent.system}
+                    onChange={(e) => update(agent.id, 'system', e.target.value)}
+                    rows={2}
+                    className="w-full bg-transparent text-sm text-zinc-400 placeholder:text-zinc-600 focus:outline-none resize-none leading-relaxed pl-7"
+                    placeholder="Instructions for this agent..."
+                  />
                 </div>
               </div>
-            )}
+            ))}
           </div>
 
-          <button
-            type="button"
-            onClick={runTeam}
-            disabled={running || !task.trim()}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-black text-sm font-medium hover:bg-zinc-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            {running
-              ? `Running ${agents.length} agent${agents.length > 1 ? 's' : ''} (20–40s)...`
-              : agents.length === 1
-              ? 'Run Agent'
-              : `Run ${agents.length}-Agent Team`}
-          </button>
-
-          {error && (
-            <div className="mt-4 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-sm text-red-300">
-              {error}
-            </div>
-          )}
-
-          {log.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-5">
-                Results
-              </h2>
-              <div className="space-y-4">
-                {log.map((entry, i) => (
-                  <div
-                    key={i}
-                    className="p-5 rounded-2xl bg-white/[0.03] border border-white/10"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-5 h-5 rounded bg-blue-500/20 text-blue-400 text-[10px] flex items-center justify-center">
-                        {i + 1}
-                      </div>
-                      <span className="text-xs font-medium text-blue-400">{entry.agent}</span>
-                    </div>
-                    <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                      {entry.output}
-                    </p>
-                  </div>
-                ))}
+          {agents.length < 5 && (
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => add()}
+                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                + Agent
+              </button>
+              <div className="flex gap-1.5 flex-wrap">
+                {ROLES.filter((r) => !agents.some((a) => a.name === r.name))
+                  .slice(0, 3)
+                  .map((r) => (
+                    <button
+                      key={r.name}
+                      type="button"
+                      onClick={() => add(r)}
+                      className="text-[11px] px-2 py-0.5 rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800/50 transition-colors"
+                    >
+                      {r.name}
+                    </button>
+                  ))}
               </div>
             </div>
           )}
-        </div>
-      </div>
+        </section>
+
+        {/* Run */}
+        <button
+          type="button"
+          onClick={run}
+          disabled={running || !task.trim()}
+          className="h-10 px-5 rounded-lg bg-white text-black text-sm font-medium hover:bg-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          {running
+            ? 'Running…'
+            : agents.length === 1
+            ? 'Run'
+            : `Run ${agents.length} agents`}
+        </button>
+
+        {error && (
+          <p className="mt-4 text-sm text-red-400/90">{error}</p>
+        )}
+
+        {/* Results */}
+        {log.length > 0 && (
+          <section className="mt-14 space-y-6">
+            <div className="h-px bg-zinc-900" />
+            {log.map((entry, i) => (
+              <div key={i}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] text-zinc-600 tabular-nums">{i + 1}</span>
+                  <span className="text-xs font-medium text-zinc-400">{entry.agent}</span>
+                </div>
+                <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap pl-5">
+                  {entry.output}
+                </p>
+              </div>
+            ))}
+          </section>
+        )}
+      </main>
     </div>
   );
 }
