@@ -13,6 +13,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@ai-sdk/xai": "latest",
+    "@ai-sdk/react": "latest",
     "ai": "latest",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.5.0"
