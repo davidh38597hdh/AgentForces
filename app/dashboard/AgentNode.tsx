@@ -18,16 +18,23 @@ export type AgentNodeData = {
   network?: string;
   /** Allowlisted connector ids this agent may invoke as tools */
   connectorIds?: string[];
+  /** Visual focus: dim when another company is active in the mesh UI */
+  companyFocused?: boolean;
 };
 
 function AgentNodeComponent({ data, selected }: NodeProps) {
   const d = data as AgentNodeData;
+  const focused = d.companyFocused !== false;
   return (
     <div
-      className={`min-w-[190px] max-w-[230px] rounded-xl border bg-zinc-900/95 shadow-lg backdrop-blur ${
+      className={`min-w-[190px] max-w-[230px] rounded-xl border bg-zinc-900/95 shadow-lg backdrop-blur transition-opacity duration-200 ${
         selected ? 'border-white/40 ring-1 ring-white/20' : 'border-zinc-700'
-      } ${d.exposed ? 'ring-1 ring-amber-500/30' : ''}`}
-      style={{ borderLeftWidth: 3, borderLeftColor: d.color }}
+      } ${d.exposed ? 'ring-1 ring-amber-500/30' : ''} ${focused ? '' : 'opacity-30 grayscale-[40%]'}`}
+      style={{
+        borderLeftWidth: 4,
+        borderLeftColor: d.color,
+        boxShadow: focused && selected ? `0 0 0 1px ${d.color}55` : undefined,
+      }}
     >
       {/* Multiple inbound connections allowed */}
       <Handle
@@ -47,8 +54,17 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
         )}
       </div>
       <div className="px-3 pb-2.5 space-y-0.5">
-        <p className="text-[10px] text-zinc-400 truncate">{d.company}</p>
-        <p className="text-[10px] truncate" style={{ color: d.color }}>
+        <p
+          className="text-[10px] font-medium truncate inline-flex items-center gap-1 max-w-full"
+          style={{ color: d.color }}
+        >
+          <span
+            className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
+            style={{ backgroundColor: d.color }}
+          />
+          {d.company}
+        </p>
+        <p className="text-[10px] text-zinc-500 truncate">
           {d.team} · {d.role}
         </p>
         {d.network && (

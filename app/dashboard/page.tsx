@@ -1,25 +1,30 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
+  Panel,
   addEdge,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   ConnectionMode,
   type Connection,
   type Node,
   type Edge,
+  type NodeChange,
   BackgroundVariant,
   MarkerType,
 } from '@xyflow/react';
 import AgentNode, { type AgentNodeData } from './AgentNode';
+import CompanyZoneNode, { type CompanyZoneData } from './CompanyZoneNode';
 import { buildProjectSeed } from '@/lib/seed-graph';
 import { Logo } from '@/components/Logo';
 import {
@@ -170,7 +175,42 @@ const MODELS: Record<Provider, { id: string; label: string }[]> = {
   ],
 };
 
-const nodeTypes = { agent: AgentNode };
+const nodeTypes = { agent: AgentNode, companyZone: CompanyZoneNode };
+
+const ZONE_PREFIX = 'zone-';
+const COL_W = 340;
+const ROW_H = 150;
+const LANE_PAD_X = 28;
+const LANE_PAD_Y = 48;
+
+function companyByName(name: string) {
+  return COMPANIES.find((c) => c.name === name);
+}
+
+function companyById(id: string) {
+  return COMPANIES.find((c) => c.id === id);
+}
+
+/** Companies present on canvas + catalog (for switcher chips). */
+function meshCompanies(agentNodes: Node[]) {
+  const seen = new Map<string, { id: string; name: string; color: string }>();
+  for (const c of COMPANIES) {
+    seen.set(c.name, c);
+  }
+  for (const n of agentNodes) {
+    if (n.id.startsWith(ZONE_PREFIX)) continue;
+    const d = n.data as AgentNodeData;
+    if (!d?.company) continue;
+    if (!seen.has(d.company)) {
+      seen.set(d.company, {
+        id: `custom-${d.company.toLowerCase().replace(/\s+/g, '-')}`,
+        name: d.company,
+        color: d.color || '#71717a',
+      });
+    }
+  }
+  return Array.from(seen.values());
+}
 
 function makeNode(
   preset: (typeof ROLE_PRESETS)[0],
@@ -178,13 +218,13 @@ function makeNode(
   index: number
 ): Node {
   const id = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 6)}`;
-  const col = COMPANIES.findIndex((c) => c.id === company.id);
+  const col = Math.max(0, COMPANIES.findIndex((c) => c.id === company.id));
   return {
     id,
     type: 'agent',
     position: {
-      x: 60 + col * 320 + (index % 2) * 40,
-      y: 60 + Math.floor(index / 1) * 130 + (index % 3) * 20,
+      x: 60 + col * COL_W + (index % 2) * 40,
+      y: 80 + Math.floor(index / 1) * ROW_H + (index % 3) * 12,
     },
     data: {
       name: preset.name,
@@ -199,6 +239,109 @@ function makeNode(
       network: undefined,
     } satisfies AgentNodeData,
   };
+}
+
+function buildCompanyZoneNodes(
+  agentNodes: Node[],
+  focusCompanyId: string | 'all'
+): Node[] {
+  const agents = agentNodes.filter((n) => n.type === 'agent' || !n.type);
+  const companies = meshCompanies(agents);
+  const zones: Node[] = [];
+
+  for (let col = 0; col < companies.length; col++) {
+    const c = companies[col];
+    const members = agents.filter((n) => (n.data as AgentNodeData).company === c.name);
+    if (!members.length) continue;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const n of members) {
+      const w = 220;
+      const h = 120;
+      minX = Math.min(minX, n.position.x);
+      minY = Math.min(minY, n.position.y);
+      maxX = Math.max(maxX, n.position.x + w);
+      maxY = Math.max(maxY, n.position.y + h);
+    }
+
+    const focused = focusCompanyId === 'all' || focusCompanyId === c.id;
+    const width = Math.max(260, maxX - minX + LANE_PAD_X * 2);
+    const height = Math.max(160, maxY - minY + LANE_PAD_Y + 24);
+
+    zones.push({
+      id: `${ZONE_PREFIX}${c.id}`,
+      type: 'companyZone',
+      position: { x: minX - LANE_PAD_X, y: minY - LANE_PAD_Y },
+      draggable: false,
+      selectable: false,
+      focusable: false,
+      connectable: false,
+      zIndex: -1,
+      style: { width, height },
+      data: {
+        name: c.name,
+        color: c.color,
+        agentCount: members.length,
+        focused,
+      } satisfies CompanyZoneData,
+    });
+  }
+  return zones;
+}
+
+/** Inner helper: fit viewport when company focus / layout epoch changes (not on every drag). */
+function CompanyFocusFit({
+  focusCompanyId,
+  agentNodes,
+  fitEpoch,
+}: {
+  focusCompanyId: string | 'all';
+  agentNodes: Node[];
+  fitEpoch: number;
+}) {
+  const { fitView } = useReactFlow();
+  const agentsRef = useRef(agentNodes);
+  agentsRef.current = agentNodes;
+  const skipFirst = useRef(true);
+
+  useEffect(() => {
+    // Avoid fighting initial fitView on first mount
+    if (skipFirst.current) {
+      skipFirst.current = false;
+      return;
+    }
+    const agents = agentsRef.current.filter((n) => !n.id.startsWith(ZONE_PREFIX));
+    if (!agents.length) return;
+
+    if (focusCompanyId === 'all') {
+      const t = window.setTimeout(() => {
+        fitView({ padding: 0.22, duration: 320 });
+      }, 50);
+      return () => window.clearTimeout(t);
+    }
+
+    const company = companyById(focusCompanyId);
+    const matchName = company?.name;
+    const targets = agents.filter((n) => {
+      const d = n.data as AgentNodeData;
+      if (matchName) return d.company === matchName;
+      return companyByName(d.company)?.id === focusCompanyId || d.company === focusCompanyId;
+    });
+    if (!targets.length) return;
+    const t = window.setTimeout(() => {
+      fitView({
+        nodes: targets.map((n) => ({ id: n.id })),
+        padding: 0.35,
+        duration: 320,
+      });
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [focusCompanyId, fitView, fitEpoch]);
+
+  return null;
 }
 
 function edgeStyle(crossCompany: boolean): Partial<Edge> {
@@ -244,6 +387,11 @@ function Dashboard() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addCompanyId, setAddCompanyId] = useState(COMPANIES[0].id);
+  /** Active company lens on the canvas: 'all' or company id */
+  const [focusCompanyId, setFocusCompanyId] = useState<string | 'all'>('all');
+  const [showCompanyLanes, setShowCompanyLanes] = useState(true);
+  /** Bumps when layout should re-fit (e.g. arrange by company) */
+  const [fitEpoch, setFitEpoch] = useState(0);
   const [task, setTask] = useState('');
   const [context, setContext] = useState('');
   const [urls, setUrls] = useState('');
@@ -400,9 +548,25 @@ function Dashboard() {
     } catch {}
   };
 
+  const agentNodes = useMemo(
+    () => nodes.filter((n) => !n.id.startsWith(ZONE_PREFIX)),
+    [nodes]
+  );
+
+  const companiesOnMesh = useMemo(() => meshCompanies(agentNodes), [agentNodes]);
+
+  const companyCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const n of agentNodes) {
+      const name = (n.data as AgentNodeData).company;
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    return counts;
+  }, [agentNodes]);
+
   const selected = useMemo(
-    () => nodes.find((n) => n.id === selectedId) || null,
-    [nodes, selectedId]
+    () => agentNodes.find((n) => n.id === selectedId) || null,
+    [agentNodes, selectedId]
   );
 
   const filteredPresets = useMemo(() => {
@@ -416,10 +580,128 @@ function Dashboard() {
     );
   }, [libraryQuery]);
 
+  /** Nodes rendered on canvas: company zones under agents, with focus dimming. */
+  const displayNodes = useMemo(() => {
+    const focusName =
+      focusCompanyId === 'all' ? null : companyById(focusCompanyId)?.name || null;
+
+    const decorated = agentNodes.map((n) => {
+      const d = n.data as AgentNodeData;
+      const matches =
+        focusCompanyId === 'all' ||
+        d.company === focusName ||
+        companyByName(d.company)?.id === focusCompanyId;
+      return {
+        ...n,
+        zIndex: matches ? 10 : 2,
+        data: {
+          ...d,
+          companyFocused: matches,
+        } satisfies AgentNodeData,
+      };
+    });
+
+    if (!showCompanyLanes) return decorated;
+    const zones = buildCompanyZoneNodes(agentNodes, focusCompanyId);
+    return [...zones, ...decorated];
+  }, [agentNodes, focusCompanyId, showCompanyLanes]);
+
+  const displayEdges = useMemo(() => {
+    if (focusCompanyId === 'all') return edges;
+    const focusName = companyById(focusCompanyId)?.name;
+    const focusedIds = new Set(
+      agentNodes
+        .filter((n) => {
+          const d = n.data as AgentNodeData;
+          return d.company === focusName || companyByName(d.company)?.id === focusCompanyId;
+        })
+        .map((n) => n.id)
+    );
+    return edges.map((e) => {
+      const involved = focusedIds.has(e.source) || focusedIds.has(e.target);
+      return {
+        ...e,
+        style: {
+          ...(e.style || {}),
+          opacity: involved ? 1 : 0.15,
+        },
+        animated: involved ? e.animated : false,
+      };
+    });
+  }, [edges, focusCompanyId, agentNodes]);
+
   const getData = useCallback(
-    (id: string) => nodes.find((n) => n.id === id)?.data as AgentNodeData | undefined,
-    [nodes]
+    (id: string) => agentNodes.find((n) => n.id === id)?.data as AgentNodeData | undefined,
+    [agentNodes]
   );
+
+  const onNodesChangeSafe = useCallback(
+    (changes: NodeChange[]) => {
+      // Never apply zone node changes into agent state
+      onNodesChange(changes.filter((c) => !('id' in c && c.id?.startsWith(ZONE_PREFIX))));
+    },
+    [onNodesChange]
+  );
+
+  const switchCompanyFocus = useCallback((id: string | 'all') => {
+    setFocusCompanyId(id);
+    if (id !== 'all') {
+      const c = companyById(id);
+      if (c) setAddCompanyId(c.id);
+    }
+  }, []);
+
+  const assignSelectedToCompany = useCallback(
+    (company: { id: string; name: string; color: string }) => {
+      if (!selectedId) {
+        setAddCompanyId(company.id);
+        switchCompanyFocus(company.id);
+        return;
+      }
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== selectedId) return n;
+          const d = n.data as AgentNodeData;
+          return {
+            ...n,
+            data: { ...d, company: company.name, color: company.color },
+          };
+        })
+      );
+      setAddCompanyId(company.id);
+      switchCompanyFocus(company.id);
+    },
+    [selectedId, setNodes, switchCompanyFocus]
+  );
+
+  const arrangeByCompany = useCallback(() => {
+    const companies = meshCompanies(agentNodes);
+    const order = companies.length
+      ? companies
+      : COMPANIES.map((c) => ({ id: c.id, name: c.name, color: c.color }));
+
+    setNodes((nds) => {
+      const agents = nds.filter((n) => !n.id.startsWith(ZONE_PREFIX));
+      const colIndex = new Map(order.map((c, i) => [c.name, i]));
+      const rowInCol = new Map<string, number>();
+
+      return agents.map((n) => {
+        const d = n.data as AgentNodeData;
+        const col = colIndex.get(d.company) ?? 0;
+        const row = rowInCol.get(d.company) || 0;
+        rowInCol.set(d.company, row + 1);
+        return {
+          ...n,
+          position: {
+            x: 60 + col * COL_W,
+            y: 90 + row * ROW_H,
+          },
+        };
+      });
+    });
+    // Re-fit viewport to current company lens after column layout
+    window.setTimeout(() => setFitEpoch((e) => e + 1), 30);
+  }, [agentNodes, setNodes]);
 
   /** Allow many edges; block cross-company / inter-network unless both exposed */
   const isValidConnection = useCallback(
@@ -479,10 +761,15 @@ function Dashboard() {
   );
 
   const addAgent = (preset?: (typeof ROLE_PRESETS)[0]) => {
-    if (nodes.length >= 12) return;
-    const company = COMPANIES.find((c) => c.id === addCompanyId) || COMPANIES[0];
+    if (agentNodes.length >= 12) return;
+    const company = companyById(addCompanyId) || COMPANIES[0];
     const p = preset || ROLE_PRESETS[3];
-    setNodes((nds) => [...nds, makeNode(p, company, nds.length)]);
+    setNodes((nds) => {
+      const agents = nds.filter((n) => !n.id.startsWith(ZONE_PREFIX));
+      return [...agents, makeNode(p, company, agents.length)];
+    });
+    // Keep new agent company in view
+    setFocusCompanyId(company.id);
   };
 
   const seedTwoCompanies = () => {
@@ -538,8 +825,8 @@ function Dashboard() {
   };
 
   const removeSelected = () => {
-    if (!selectedId || nodes.length <= 1) return;
-    setNodes((nds) => nds.filter((n) => n.id !== selectedId));
+    if (!selectedId || agentNodes.length <= 1) return;
+    setNodes((nds) => nds.filter((n) => n.id !== selectedId && !n.id.startsWith(ZONE_PREFIX)));
     setEdges((eds) => eds.filter((e) => e.source !== selectedId && e.target !== selectedId));
     setSelectedId(null);
   };
@@ -556,7 +843,7 @@ function Dashboard() {
     setOutcome('');
     setConnectorActions([]);
     try {
-      const agents = nodes.map((n) => {
+      const agents = agentNodes.map((n) => {
         const d = n.data as AgentNodeData;
         return {
           id: n.id,
@@ -902,17 +1189,37 @@ function Dashboard() {
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
                   Company for new agents
                 </p>
-                <select
-                  value={addCompanyId}
-                  onChange={(e) => setAddCompanyId(e.target.value)}
-                  className="w-full text-[11px] bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-2"
-                >
-                  {COMPANIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="space-y-1.5">
+                  {COMPANIES.map((c) => {
+                    const active = addCompanyId === c.id;
+                    const count = companyCounts.get(c.name) || 0;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setAddCompanyId(c.id);
+                          switchCompanyFocus(c.id);
+                        }}
+                        className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                          active
+                            ? 'border-white/25 bg-zinc-900'
+                            : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700'
+                        }`}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: c.color }}
+                        />
+                        <span className="text-[11px] text-zinc-200 flex-1 truncate">{c.name}</span>
+                        <span className="text-[10px] text-zinc-600 tabular-nums">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-zinc-600 mt-2 leading-relaxed">
+                  Click a company to set it as default and focus it on the canvas.
+                </p>
               </div>
             </div>
           </div>
@@ -932,81 +1239,239 @@ function Dashboard() {
 
         {/* —— Center: canvas —— */}
         <div className="flex-1 min-w-0 min-h-0 relative">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            isValidConnection={isValidConnection}
-            connectionMode={ConnectionMode.Loose}
-            onNodeClick={(_, n) => setSelectedId(n.id)}
-            onPaneClick={() => setSelectedId(null)}
-            nodeTypes={nodeTypes}
-            fitView
-            proOptions={{ hideAttribution: true }}
-            className="bg-[#000000]"
-          >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1c1c1e" />
-            <Controls />
-            <MiniMap
-              nodeColor={(n) => (n.data as AgentNodeData)?.color || '#52525b'}
-              maskColor="rgba(0,0,0,0.75)"
-            />
-          </ReactFlow>
+          <ReactFlowProvider>
+            <ReactFlow
+              nodes={displayNodes}
+              edges={displayEdges}
+              onNodesChange={onNodesChangeSafe}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              isValidConnection={isValidConnection}
+              connectionMode={ConnectionMode.Loose}
+              onNodeClick={(_, n) => {
+                if (n.id.startsWith(ZONE_PREFIX)) return;
+                setSelectedId(n.id);
+                const d = n.data as AgentNodeData;
+                const c = companyByName(d.company);
+                if (c) setAddCompanyId(c.id);
+              }}
+              onPaneClick={() => setSelectedId(null)}
+              nodeTypes={nodeTypes}
+              fitView
+              proOptions={{ hideAttribution: true }}
+              className="bg-[#000000]"
+              nodesDraggable
+              elementsSelectable
+            >
+              <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1c1c1e" />
+              <Controls />
+              <MiniMap
+                nodeColor={(n) => {
+                  if (n.id.startsWith(ZONE_PREFIX)) {
+                    return (n.data as CompanyZoneData)?.color || '#27272a';
+                  }
+                  return (n.data as AgentNodeData)?.color || '#52525b';
+                }}
+                maskColor="rgba(0,0,0,0.75)"
+                pannable
+                zoomable
+              />
+              <CompanyFocusFit
+                focusCompanyId={focusCompanyId}
+                agentNodes={agentNodes}
+                fitEpoch={fitEpoch}
+              />
 
-          <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 pointer-events-none justify-center">
-            <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-800 bg-black/90 p-1.5 backdrop-blur">
-              <button
-                type="button"
-                onClick={seedTwoCompanies}
-                className="text-[11px] px-2 py-1 rounded-md text-amber-500/90 hover:text-amber-400"
-              >
-                Demo: 2 companies
-              </button>
-              <button
-                type="button"
-                onClick={() => setEdges([])}
-                className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
-              >
-                Clear links
-              </button>
-              <button
-                type="button"
-                onClick={() => setLibraryOpen((o) => !o)}
-                className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-800"
-              >
-                {libraryOpen ? 'Hide library' : 'Library'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setInspectorOpen((o) => !o)}
-                className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-800"
-              >
-                {inspectorOpen ? 'Hide inspector' : 'Inspector'}
-              </button>
-            </div>
-          </div>
+              {/* Company switcher — primary mesh UI control */}
+              <Panel position="top-center" className="!m-3">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-zinc-800 bg-black/95 p-1.5 backdrop-blur shadow-xl">
+                    <button
+                      type="button"
+                      onClick={() => switchCompanyFocus('all')}
+                      className={`text-[11px] px-2.5 py-1.5 rounded-lg transition-colors ${
+                        focusCompanyId === 'all'
+                          ? 'bg-zinc-100 text-black font-medium'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+                      }`}
+                    >
+                      All companies
+                      <span className="ml-1.5 text-[10px] opacity-70 tabular-nums">
+                        {agentNodes.length}
+                      </span>
+                    </button>
+                    <span className="h-4 w-px bg-zinc-800 mx-0.5 hidden sm:block" />
+                    {companiesOnMesh.map((c) => {
+                      const count = companyCounts.get(c.name) || 0;
+                      const active = focusCompanyId === c.id;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => switchCompanyFocus(c.id)}
+                          title={`Focus ${c.name} on the mesh`}
+                          className={`inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg transition-colors border ${
+                            active
+                              ? 'text-zinc-50 border-transparent'
+                              : 'text-zinc-400 border-transparent hover:text-zinc-200 hover:bg-zinc-900'
+                          }`}
+                          style={
+                            active
+                              ? {
+                                  backgroundColor: `${c.color}33`,
+                                  boxShadow: `inset 0 0 0 1px ${c.color}88`,
+                                }
+                              : undefined
+                          }
+                        >
+                          <span
+                            className="h-2 w-2 rounded-full shrink-0"
+                            style={{ backgroundColor: c.color }}
+                          />
+                          <span className="max-w-[7rem] truncate">{c.name}</span>
+                          <span className="text-[10px] opacity-70 tabular-nums">{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-black/90 p-1 backdrop-blur">
+                    <button
+                      type="button"
+                      onClick={arrangeByCompany}
+                      className="text-[11px] px-2 py-1 rounded-md text-cyan-400/90 hover:text-cyan-300"
+                      title="Layout agents into company columns"
+                    >
+                      Arrange by company
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCompanyLanes((v) => !v)}
+                      className={`text-[11px] px-2 py-1 rounded-md border border-zinc-800 ${
+                        showCompanyLanes ? 'text-violet-300' : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      {showCompanyLanes ? 'Lanes on' : 'Lanes off'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={seedTwoCompanies}
+                      className="text-[11px] px-2 py-1 rounded-md text-amber-500/90 hover:text-amber-400"
+                    >
+                      Demo: 2 companies
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEdges([])}
+                      className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
+                    >
+                      Clear links
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLibraryOpen((o) => !o)}
+                      className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-800"
+                    >
+                      {libraryOpen ? 'Hide library' : 'Library'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInspectorOpen((o) => !o)}
+                      className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-800"
+                    >
+                      {inspectorOpen ? 'Hide inspector' : 'Inspector'}
+                    </button>
+                  </div>
+                </div>
+              </Panel>
 
-          <div className="absolute bottom-3 left-3 space-y-1">
-            <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-800 bg-black/90 px-2.5 py-1.5">
-              {COMPANIES.map((c) => (
-                <span key={c.id} className="flex items-center gap-1.5 text-[10px] text-zinc-500">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
-                  {c.name}
-                </span>
-              ))}
-              <span className="flex items-center gap-1.5 text-[10px] text-amber-500/80">
-                <span className="h-0.5 w-4 border-t border-dashed border-amber-500" />
-                External link
-              </span>
-            </div>
-            {connectHint && (
-              <p className="text-[10px] text-amber-400 bg-black/90 border border-zinc-800 rounded px-2 py-1">
-                {connectHint}
-              </p>
-            )}
-          </div>
+              <Panel position="bottom-left" className="!m-3">
+                <div className="space-y-1.5 max-w-md">
+                  <div className="flex flex-wrap gap-1.5 rounded-lg border border-zinc-800 bg-black/90 px-2 py-1.5">
+                    <span className="text-[10px] text-zinc-600 self-center pr-1">View</span>
+                    {companiesOnMesh.map((c) => {
+                      const active = focusCompanyId === c.id;
+                      return (
+                        <button
+                          key={`leg-${c.id}`}
+                          type="button"
+                          onClick={() => switchCompanyFocus(c.id)}
+                          className={`flex items-center gap-1.5 text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                            active ? 'text-zinc-100 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300'
+                          }`}
+                        >
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: c.color }}
+                          />
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => switchCompanyFocus('all')}
+                      className={`text-[10px] px-1.5 py-0.5 rounded-md ${
+                        focusCompanyId === 'all'
+                          ? 'text-zinc-100 bg-zinc-800'
+                          : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <span className="flex items-center gap-1.5 text-[10px] text-amber-500/80 ml-1">
+                      <span className="h-0.5 w-4 border-t border-dashed border-amber-500" />
+                      Ext link
+                    </span>
+                  </div>
+                  {selected && (
+                    <div className="rounded-lg border border-zinc-800 bg-black/90 px-2.5 py-2">
+                      <p className="text-[10px] text-zinc-500 mb-1.5">
+                        Move{' '}
+                        <span className="text-zinc-300">
+                          {(selected.data as AgentNodeData).name}
+                        </span>{' '}
+                        to company
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {COMPANIES.map((c) => {
+                          const current =
+                            (selected.data as AgentNodeData).company === c.name;
+                          return (
+                            <button
+                              key={`assign-${c.id}`}
+                              type="button"
+                              onClick={() => assignSelectedToCompany(c)}
+                              className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
+                                current
+                                  ? 'border-white/30 text-zinc-100'
+                                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                              }`}
+                              style={
+                                current
+                                  ? { backgroundColor: `${c.color}28` }
+                                  : undefined
+                              }
+                            >
+                              <span
+                                className="inline-block h-1.5 w-1.5 rounded-full mr-1.5 align-middle"
+                                style={{ backgroundColor: c.color }}
+                              />
+                              {c.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {connectHint && (
+                    <p className="text-[10px] text-amber-400 bg-black/90 border border-zinc-800 rounded px-2 py-1">
+                      {connectHint}
+                    </p>
+                  )}
+                </div>
+              </Panel>
+            </ReactFlow>
+          </ReactFlowProvider>
         </div>
 
         {!inspectorOpen && (
@@ -1126,23 +1591,40 @@ function Dashboard() {
                       <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
                         Company
                       </label>
-                      <select
-                        value={(selected.data as AgentNodeData).company}
-                        onChange={(e) => {
-                          const c = COMPANIES.find((x) => x.name === e.target.value);
-                          updateSelected({
-                            company: e.target.value,
-                            color: c?.color || (selected.data as AgentNodeData).color,
-                          });
-                        }}
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
-                      >
-                        {COMPANIES.map((c) => (
-                          <option key={c.id} value={c.name}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {COMPANIES.map((c) => {
+                          const current = (selected.data as AgentNodeData).company === c.name;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => assignSelectedToCompany(c)}
+                              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                                current
+                                  ? 'border-white/30 bg-zinc-900 text-zinc-100'
+                                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200'
+                              }`}
+                              style={
+                                current
+                                  ? { boxShadow: `inset 3px 0 0 ${c.color}` }
+                                  : undefined
+                              }
+                            >
+                              <span
+                                className="h-2 w-2 rounded-full shrink-0"
+                                style={{ backgroundColor: c.color }}
+                              />
+                              {c.name}
+                              {current && (
+                                <span className="ml-auto text-[10px] text-zinc-500">active</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[10px] text-zinc-600">
+                        Switches company on the node and focuses that company on the canvas.
+                      </p>
                       <label className="flex items-center gap-2 text-xs text-zinc-400">
                         <input
                           type="checkbox"
