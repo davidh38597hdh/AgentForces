@@ -25,6 +25,7 @@ import {
 } from '@xyflow/react';
 import AgentNode, { type AgentNodeData } from './AgentNode';
 import CompanyZoneNode, { type CompanyZoneData } from './CompanyZoneNode';
+import { MeshLegend } from './MeshLegend';
 import { buildProjectSeed, companiesFromSeedNodes } from '@/lib/seed-graph';
 import { Logo } from '@/components/Logo';
 import {
@@ -1869,210 +1870,43 @@ function Dashboard() {
                 </div>
               </Panel>
 
-              {/* Mesh legend — bottom left, clearly labeled */}
-              <Panel position="bottom-left" className="!m-3">
-                <div className="w-[min(100vw-2rem,20rem)] space-y-2 text-zinc-800">
-                  <div className="rounded-xl border border-zinc-200 bg-white/95 backdrop-blur shadow-lg shadow-zinc-200/60 overflow-hidden">
-                    <div className="px-3 py-2 border-b border-zinc-200 flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
-                        Mesh legend
-                      </p>
-                      <span className="text-[10px] text-zinc-500 tabular-nums">
-                        {agentNodes.length} agent{agentNodes.length === 1 ? '' : 's'}
-                      </span>
-                    </div>
-
-                    {/* Companies / focus filter */}
-                    <div className="px-3 py-2.5 border-b border-zinc-200">
-                      <p className="text-[10px] font-medium text-zinc-500 mb-1.5">
-                        Companies{' '}
-                        <span className="font-normal text-zinc-500">— click to focus</span>
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        <button
-                          type="button"
-                          onClick={() => switchCompanyFocus('all')}
-                          className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
-                            focusCompanyId === 'all'
-                              ? 'border-white/30 bg-zinc-800 text-zinc-900'
-                              : 'border-zinc-200 text-zinc-500 hover:text-zinc-700'
-                          }`}
-                        >
-                          All ({agentNodes.length})
-                        </button>
-                        {companiesOnMesh.length === 0 ? (
-                          <span className="text-[10px] text-zinc-500 self-center px-1">
-                            None yet — add in Library → Companies
-                          </span>
-                        ) : (
-                          companiesOnMesh.map((c) => {
-                            const count = companyCounts.get(c.name) || 0;
-                            const active = focusCompanyId === c.id;
-                            return (
-                              <button
-                                key={`leg-${c.id}`}
-                                type="button"
-                                onClick={() => switchCompanyFocus(c.id)}
-                                title={`Focus ${c.name}`}
-                                className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-md border transition-colors ${
-                                  active
-                                    ? 'text-zinc-900 border-transparent'
-                                    : 'border-zinc-200 text-zinc-500 hover:text-zinc-700'
-                                }`}
-                                style={
-                                  active
-                                    ? {
-                                        backgroundColor: `${c.color}33`,
-                                        boxShadow: `inset 0 0 0 1px ${c.color}88`,
-                                      }
-                                    : undefined
-                                }
-                              >
-                                <span
-                                  className="h-2 w-2 rounded-full shrink-0"
-                                  style={{ backgroundColor: c.color }}
-                                />
-                                <span className="max-w-[6.5rem] truncate">{c.name}</span>
-                                <span className="opacity-70 tabular-nums">{count}</span>
-                              </button>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Symbol key */}
-                    <div className="px-3 py-2.5 space-y-2">
-                      <p className="text-[10px] font-medium text-zinc-500">
-                        Symbols{' '}
-                        <span className="font-normal text-zinc-500">— what you see on the graph</span>
-                      </p>
-                      <ul className="space-y-1.5">
-                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
-                          <span
-                            className="w-7 shrink-0 border-t-2 border-zinc-500"
-                            aria-hidden
-                          />
-                          <span>
-                            <span className="text-zinc-700">Internal link</span>
-                            <span className="text-zinc-500"> — same company / network</span>
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
-                          <span
-                            className="w-7 shrink-0 border-t-2 border-dashed border-amber-500"
-                            aria-hidden
-                          />
-                          <span>
-                            <span className="text-amber-400/90">External / Ext link</span>
-                            <span className="text-zinc-500"> — cross-company or inter-network</span>
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
-                          <span className="w-7 shrink-0 flex justify-center" aria-hidden>
-                            <span className="text-[8px] uppercase tracking-wide text-amber-400/90 border border-amber-500/40 rounded px-0.5">
-                              Ext
-                            </span>
-                          </span>
-                          <span>
-                            <span className="text-zinc-700">Ext agent</span>
-                            <span className="text-zinc-500"> — may talk across boundaries</span>
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
-                          <span className="w-7 shrink-0 flex justify-center" aria-hidden>
-                            <span className="h-2.5 w-2.5 rounded border border-dashed border-violet-500/50 bg-violet-500/10" />
-                          </span>
-                          <span>
-                            <span className="text-zinc-700">Company lane</span>
-                            <span className="text-zinc-500"> — dashed frame around an org</span>
-                          </span>
-                        </li>
-                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
-                          <span className="w-7 shrink-0 flex justify-center" aria-hidden>
-                            <span className="h-2 w-2 rounded-full bg-zinc-500 ring-2 ring-white/20" />
-                          </span>
-                          <span>
-                            <span className="text-zinc-700">Node color</span>
-                            <span className="text-zinc-500"> — company or role accent</span>
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {selected && (
-                    <div className="rounded-xl border border-zinc-200 bg-white/95 backdrop-blur px-3 py-2.5">
-                      <p className="text-[10px] font-medium text-zinc-500 mb-1.5">
-                        Assign company{' '}
-                        <span className="font-normal text-zinc-500">
-                          — {(selected.data as AgentNodeData).name}
-                        </span>
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        <button
-                          type="button"
-                          onClick={() => assignSelectedToCompany(null)}
-                          className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
-                            !(selected.data as AgentNodeData).company?.trim()
-                              ? 'border-white/30 text-zinc-900'
-                              : 'border-zinc-200 text-zinc-400 hover:text-zinc-800'
-                          }`}
-                        >
-                          None
-                        </button>
-                        {companies.map((c) => {
-                          const current =
-                            (selected.data as AgentNodeData).company === c.name;
-                          return (
-                            <button
-                              key={`assign-${c.id}`}
-                              type="button"
-                              onClick={() => assignSelectedToCompany(c)}
-                              className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
-                                current
-                                  ? 'border-white/30 text-zinc-900'
-                                  : 'border-zinc-200 text-zinc-400 hover:text-zinc-800'
-                              }`}
-                              style={
-                                current
-                                  ? { backgroundColor: `${c.color}28` }
-                                  : undefined
-                              }
-                            >
-                              <span
-                                className="inline-block h-1.5 w-1.5 rounded-full mr-1.5 align-middle"
-                                style={{ backgroundColor: c.color }}
-                              />
-                              {c.name}
-                            </button>
-                          );
-                        })}
-                        {companies.length === 0 && (
-                          <span className="text-[10px] text-zinc-500 self-center">
-                            Create companies in Library first
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {connectHint && (
-                    <p className="text-[10px] text-amber-400 bg-white/95 border border-zinc-200 rounded-lg px-2.5 py-1.5">
-                      {connectHint}
-                    </p>
-                  )}
-                </div>
-              </Panel>
             </ReactFlow>
           </ReactFlowProvider>
+        </div>
+
+        {/* Mesh legend — bottom-right (inspector corner); always visible */}
+        <div
+          className="absolute bottom-3 z-30 pointer-events-auto transition-[right,width] duration-200 ease-out"
+          style={{
+            right: inspectorOpen ? 12 : 12,
+            width: inspectorOpen ? 296 : undefined,
+            maxWidth: inspectorOpen ? 296 : 'min(18.5rem, calc(100vw - 1.5rem))',
+          }}
+        >
+          <MeshLegend
+            agentCount={agentNodes.length}
+            companiesOnMesh={companiesOnMesh}
+            companies={companies}
+            companyCounts={companyCounts}
+            focusCompanyId={focusCompanyId}
+            onFocusCompany={switchCompanyFocus}
+            selectedName={
+              selected ? (selected.data as AgentNodeData).name : null
+            }
+            selectedCompany={
+              selected ? (selected.data as AgentNodeData).company : undefined
+            }
+            onAssignCompany={assignSelectedToCompany}
+            connectHint={connectHint}
+            dockedToInspector={inspectorOpen}
+          />
         </div>
 
         {!inspectorOpen && (
           <button
             type="button"
             onClick={() => setInspectorOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 rounded-l-lg border border-r-0 border-zinc-300 bg-white/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-cyan-300"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 rounded-l-lg border border-r-0 border-zinc-300 bg-white/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-cyan-600"
             style={{ writingMode: 'vertical-rl' }}
             title="Show agent inspector"
           >
@@ -2082,7 +1916,7 @@ function Dashboard() {
 
         {/* —— Right: Agent customization (toggle) —— */}
         <aside
-          className={`shrink-0 border-l border-zinc-200 bg-white/90 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
+          className={`shrink-0 border-l border-zinc-200 bg-white flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
             inspectorOpen ? 'w-[320px]' : 'w-0 border-l-0'
           }`}
         >
@@ -2094,8 +1928,8 @@ function Dashboard() {
                   onClick={() => setInspectorTab('configure')}
                   className={`px-2.5 py-1 rounded-md ${
                     inspectorTab === 'configure'
-                      ? 'bg-zinc-800 text-zinc-900'
-                      : 'text-zinc-500 hover:text-zinc-700'
+                      ? 'bg-zinc-900 text-white'
+                      : 'text-zinc-500 hover:text-zinc-800'
                   }`}
                 >
                   Configure
@@ -2105,8 +1939,8 @@ function Dashboard() {
                   onClick={() => setInspectorTab('run')}
                   className={`px-2.5 py-1 rounded-md ${
                     inspectorTab === 'run'
-                      ? 'bg-zinc-800 text-zinc-900'
-                      : 'text-zinc-500 hover:text-zinc-700'
+                      ? 'bg-zinc-900 text-white'
+                      : 'text-zinc-500 hover:text-zinc-800'
                   }`}
                 >
                   Run
