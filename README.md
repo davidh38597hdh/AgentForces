@@ -26,7 +26,7 @@ See [docs/MERGE.md](docs/MERGE.md) for architecture and status.
 - **Companies & teams** — multi-org graphs with controlled external interfaces  
 - **BYOK** — API keys in the dashboard (browser storage)  
 - **Token router** — control plane → user keys → server env  
-- **Auth** — Google + email magic link (NextAuth)  
+- **Auth** — optional (Google OAuth not enabled yet; portal is open by default)  
 - **Connectors** — URL fetch, Slack webhook, generic webhook  
 
 ## Setup
@@ -41,9 +41,10 @@ npm run dev
 
 | Variable | Required | Purpose |
 |----------|----------|----------|
-| `AUTH_SECRET` | For auth | NextAuth secret |
-| `GOOGLE_CLIENT_ID` | Google login | OAuth |
-| `GOOGLE_CLIENT_SECRET` | Google login | OAuth |
+| `AUTH_REQUIRED` | No | Default false/open until Google is ready |
+| `AUTH_SECRET` | Only if enforcing auth | NextAuth secret |
+| `GOOGLE_CLIENT_ID` | Optional later | Google OAuth (not enabled yet) |
+| `GOOGLE_CLIENT_SECRET` | Optional later | Google OAuth |
 | `EMAIL_SERVER` | Email login | SMTP |
 | `EMAIL_FROM` | Email login | From address |
 | `XAI_API_KEY` | Optional | Server fallback for Grok |

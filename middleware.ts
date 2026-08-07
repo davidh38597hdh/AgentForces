@@ -1,10 +1,15 @@
-import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { isAuthRequired } from '@/lib/auth-mode';
 
 export default auth((req) => {
+  // Open product mode: no Google auth yet — do not gate portal/dashboard
+  if (!isAuthRequired()) {
+    return NextResponse.next();
+  }
+
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-
   const isAuthRoute = pathname.startsWith('/login');
   const isProtected =
     pathname.startsWith('/portal') || pathname.startsWith('/dashboard');

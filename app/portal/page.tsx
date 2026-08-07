@@ -10,7 +10,7 @@ const ONBOARD_KEY = 'agentforces_onboarded_v1';
 const LAST_PROJECT_KEY = 'agentforces_last_project_v1';
 
 export default function PortalPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const [firstVisit, setFirstVisit] = useState(true);
   const [lastProject, setLastProject] = useState<string | null>(null);
@@ -34,14 +34,6 @@ export default function PortalPage() {
     router.push(`/dashboard?project=${encodeURIComponent(seed)}`);
   };
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 text-sm">
-        Loading…
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-zinc-100">
       <header className="border-b border-zinc-900">
@@ -50,16 +42,20 @@ export default function PortalPage() {
             AgentForces
           </Link>
           <div className="flex items-center gap-3 text-xs text-zinc-500">
-            {session?.user?.email && (
-              <span className="hidden sm:inline text-zinc-600">{session.user.email}</span>
+            {session?.user?.email ? (
+              <>
+                <span className="hidden sm:inline text-zinc-600">{session.user.email}</span>
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="hover:text-zinc-300"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <span className="text-zinc-600">Guest · no sign-in</span>
             )}
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="hover:text-zinc-300"
-            >
-              Sign out
-            </button>
           </div>
         </div>
       </header>
@@ -106,7 +102,7 @@ export default function PortalPage() {
         </div>
 
         <p className="mt-10 text-[11px] text-zinc-600">
-          Signed in with Google. Mesh access requires this session.
+          Open access for now — Google auth is not enabled. BYOK keys stay in your browser.
         </p>
       </main>
     </div>

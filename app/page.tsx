@@ -7,9 +7,6 @@ export default function Home() {
         <div className="max-w-3xl mx-auto px-5 h-12 flex items-center justify-between">
           <span className="text-sm font-medium text-zinc-500">AgentForces</span>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-xs text-zinc-500 hover:text-zinc-300">
-              Sign in
-            </Link>
             <Link href="/portal" className="text-xs text-zinc-500 hover:text-zinc-300">
               Portal →
             </Link>
@@ -28,21 +25,21 @@ export default function Home() {
           Multi-network agent meshes — chief routing, inter-network bus, your keys
         </p>
         <p className="text-zinc-600 mb-12 max-w-lg leading-relaxed text-sm">
-          Build graphs across research, computation, and creative networks. Run with Grok and
-          other models. Sign in, pick a project, open the mesh.
+          Pick a project in the portal, then open your mesh. Sign-in is optional for now (Google
+          auth not enabled).
         </p>
         <div className="flex gap-3">
           <Link
-            href="/login"
+            href="/portal"
             className="inline-flex h-10 items-center px-5 rounded-lg bg-white text-black text-sm font-medium"
           >
-            Continue with Google
+            Open portal
           </Link>
           <Link
-            href="/portal"
+            href="/dashboard"
             className="inline-flex h-10 items-center px-5 rounded-lg border border-zinc-800 text-sm text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
           >
-            Portal
+            Mesh canvas
           </Link>
         </div>
       </main>

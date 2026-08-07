@@ -1,19 +1,26 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
+import { isGoogleAuthConfigured } from '@/lib/auth-mode';
 
+/**
+ * NextAuth config. Google provider is registered only when env is present.
+ * Product default: auth optional — see lib/auth-mode.ts.
+ */
 const providers = [];
 
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+if (isGoogleAuthConfigured()) {
   providers.push(
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     })
   );
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
+  // Avoid hard-failing when AUTH_SECRET is unset in open mode
+  secret: process.env.AUTH_SECRET || 'agentforces-dev-open-mode-not-for-production',
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',

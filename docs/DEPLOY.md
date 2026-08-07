@@ -14,19 +14,12 @@ Copy [`.env.example`](../.env.example) and set at least:
 
 | Variable | Notes |
 |----------|--------|
-| `AUTH_SECRET` | Long random string |
 | `AUTH_URL` / `NEXT_PUBLIC_APP_URL` | Public HTTPS origin (no trailing slash) |
 | `AUTH_TRUST_HOST=true` | **Required** on non-Vercel / reverse proxies |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth; add redirect URI for **each** host |
+| `AUTH_REQUIRED` | Default open access — leave `false` until Google auth ships |
 | Optional provider keys | `XAI_API_KEY`, etc. (BYOK still works in UI) |
 
-Google OAuth authorized redirect URIs (examples):
-
-```
-https://agentxforces.com/api/auth/callback/google
-https://YOURAPP.fly.dev/api/auth/callback/google
-http://localhost:3000/api/auth/callback/google
-```
+**Auth note:** Google sign-in is **not** product-ready. Portal and mesh work as **guest** without OAuth. When you enable Google later, set `GOOGLE_*`, `AUTH_SECRET`, and `AUTH_REQUIRED=true`.
 
 Health check (all non-Vercel targets): `GET /api/health` → `{ ok: true, ... }`.
 

@@ -510,9 +510,7 @@ function Dashboard() {
                 </button>
               </>
             ) : (
-              <Link href="/login" className="hover:text-zinc-300">
-                Sign in
-              </Link>
+              <span className="text-zinc-600">Guest</span>
             )}
           </div>
         </div>
