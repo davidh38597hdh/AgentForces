@@ -63,14 +63,16 @@ export default function PortalPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-5 pt-16 pb-20">
-        <p className="text-xs text-zinc-600 uppercase tracking-wider mb-3">Portal</p>
-        <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-zinc-200 mb-3">
-          {firstVisit ? 'Choose a starting project' : 'Your projects'}
+        <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3">
+          Field a force · not a framework
+        </p>
+        <h1 className="text-3xl sm:text-4xl font-medium tracking-tight text-zinc-100 mb-3">
+          {firstVisit ? 'Choose how your force starts' : 'Your forces'}
         </h1>
-        <p className="text-sm text-zinc-500 mb-10 max-w-lg leading-relaxed">
+        <p className="text-sm text-zinc-400 mb-10 max-w-lg leading-relaxed">
           {firstVisit
-            ? 'First time here. Start with Orchestrate mesh (research · computation · creative + chief routing), or another template. You can edit everything on the canvas.'
-            : 'Open a template or continue. Orchestrate mesh includes AMEP/1-style bus hops and network routing.'}
+            ? 'Templates seed multi-network meshes with boundaries and chief routing. Start with Orchestrate mesh, a cross-org partnership, or a blank force — then open the canvas.'
+            : 'Re-open a template or start blank. Every force is a mesh: agents, Ext interfaces, and hop-visible runs.'}
         </p>
 
         {!firstVisit && lastProject && (

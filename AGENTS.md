@@ -1,11 +1,17 @@
 # AgentForces — Grok Build rules
 
-Multi-agent mesh orchestrator (product name **AgentForces**).  
-**Live domain:** https://agentxforces.com  
-**Repo SOT:** https://github.com/davidh38597hdh/AgentForces  
-**Concept source / earlier tree:** https://github.com/reachdavidhuynh/AgentxForce (see that repo’s `AGENTS.md` for original rules)
+**Force, not framework.** Private multi-agent **mesh product** for business outcomes.  
+**Live:** https://www.agentxforces.com · **Repo:** https://github.com/davidh38597hdh/AgentForces  
+**Positioning:** [docs/POSITIONING.md](docs/POSITIONING.md) (vs LangGraph / CrewAI)  
+**Security:** [docs/SECURITY.md](docs/SECURITY.md)
 
-This file is the standing playbook for agents working in this tree. Prefer it over ad-hoc assumptions.
+Standing playbook for agents in this tree. Prefer it over ad-hoc assumptions.
+
+### Product thesis (do not dilute)
+
+- We are a **mesh product** (UI + identity + boundaries + run), not an embeddable agent library.
+- Differentiation: **companies/networks/Ext**, chief routing, BYOK, AMEP path — not “another multi-agent framework.”
+- Copy and features should reinforce **fielding a force**, not competing as LangGraph-in-a-browser.
 
 ---
 

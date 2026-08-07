@@ -1,95 +1,67 @@
 # AgentForces
 
-Multi-agent **mesh** orchestration — graph UX, per-agent models, BYOK, and Orchestrate + AMEP/1 concepts.
+**Force, not framework.**  
+Private multi-agent **mesh** for business outcomes — visual canvas, company/network boundaries, chief routing, BYOK, production Google auth, AMEP/1 path.
 
-**Live:** [agentxforces.com](https://agentxforces.com)  
+**Live:** [agentxforces.com](https://www.agentxforces.com)  
 **Repo:** [davidh38597hdh/AgentForces](https://github.com/davidh38597hdh/AgentForces)
 
-## Product merge
+> Create your own force with a mesh of agents who work together to get common outcomes.
 
-AgentForces unifies:
+## Differentiation
 
-| Lineage | Contribution |
-|---------|----------------|
-| **AgentForces (this app)** | Next.js dashboard, portal, auth, token router, Vercel deploy |
-| **Orchestrate / MAS** | Multi-network teams, chief routing, inter-network MessageBus |
-| **AMEP/1 (amep-network)** | Protocol id, epoch sessions, envelope shape, SecureBus roadmap |
+| | LangGraph | CrewAI | **AgentForces** |
+|--|-----------|--------|-----------------|
+| Layer | Graph **runtime** in your code | **Crews** in your code | **Mesh product** + canvas |
+| Buyer | Engineers embedding agents | Builders scripting teams | Teams **fielding a force** |
+| Boundaries | Your app | Your app | Companies · networks · **Ext** |
+| Security story | App-level | App-level | **AMEP/1** path · auth · BYOK |
 
-See [docs/MERGE.md](docs/MERGE.md) for architecture and status.
+Full positioning: [docs/POSITIONING.md](docs/POSITIONING.md) · Security: [docs/SECURITY.md](docs/SECURITY.md)
 
-**Agent / contributor rules:** [AGENTS.md](AGENTS.md)
+## Product pillars
+
+1. **Force, not framework** — run meshes in product, don’t reimplement orchestration  
+2. **Boundaries by design** — Ext-only cross-company / inter-network edges  
+3. **Chief + networks** — research · computation · creative + hop-visible runs  
+4. **Your keys** — per-agent xAI / OpenAI / Anthropic (BYOK + token router)  
+5. **Mesh protocol path** — AMEP/1 session identity; AEAD sealed hops as roadmap  
+6. **Operator UX** — agent library, inspector, canvas (not a notebook)
 
 ## Features
 
-- **Mesh run** — chief routes primary network; agents execute on a graph with bus hop logs  
-- **Networks** — research / computation / creative (Orchestrate catalog) + custom network ids  
-- **Multi-provider agents** — xAI (Grok), OpenAI, Anthropic per node  
-- **2D graph** — drag-and-drop, fan-in / fan-out, inter-network Ext edges  
-- **Companies & teams** — multi-org graphs with controlled external interfaces  
-- **BYOK** — API keys in the dashboard (browser storage)  
-- **Token router** — control plane → user keys → server env  
-- **Auth** — Google OAuth; **required in production** (no guest mesh)  
-- **Security** — see [docs/SECURITY.md](docs/SECURITY.md) (mesh AEAD Phase 2)  
-- **Connectors** — URL fetch, Slack webhook, generic webhook  
+- Mesh run with chief routing and bus hop logs  
+- Multi-org graphs + Ext interfaces  
+- Collapsible **Agent library** (left) and **Inspector** (right)  
+- Google OAuth — **required in production** (no guest mesh)  
+- Secondary deploy: Docker / Fly / Render (`docs/DEPLOY.md`)
 
 ## Setup
 
 ```bash
-cd ~/code/AgentForces   # or clone path
+cd ~/code/AgentForces
 npm install
 npm run dev
-# UI visualizer (no deploy): http://localhost:3000/ui
+# UI kit: http://localhost:3000/ui
 ```
 
-### Environment variables
+### Environment (production)
 
 | Variable | Required | Purpose |
 |----------|----------|----------|
-| `AUTH_REQUIRED` | No | Default false/open until Google is ready |
-| `AUTH_SECRET` | Only if enforcing auth | NextAuth secret |
-| `GOOGLE_CLIENT_ID` | Optional later | Google OAuth (not enabled yet) |
-| `GOOGLE_CLIENT_SECRET` | Optional later | Google OAuth |
-| `EMAIL_SERVER` | Email login | SMTP |
-| `EMAIL_FROM` | Email login | From address |
-| `XAI_API_KEY` | Optional | Server fallback for Grok |
-| `OPENAI_API_KEY` | Optional | Server fallback |
-| `ANTHROPIC_API_KEY` | Optional | Server fallback |
-| `TOKEN_CONTROL_URL` | Optional | Future central key vault |
-| `TOKEN_CONTROL_SECRET` | Optional | Auth for control plane |
+| `AUTH_URL` | Yes | **`https://www.agentxforces.com`** (match www) |
+| `NEXT_PUBLIC_APP_URL` | Yes | Same host as AUTH_URL |
+| `AUTH_TRUST_HOST` | Yes | `true` |
+| `AUTH_SECRET` | Yes | Session signing |
+| `GOOGLE_CLIENT_ID` | Yes | Not `GOOGLE_CLIENT` |
+| `GOOGLE_CLIENT_SECRET` | Yes | OAuth |
+| Provider keys | Optional | Server fallback; BYOK preferred |
 
-## Try the Orchestrate mesh
+Google redirect: `https://www.agentxforces.com/api/auth/callback/google`
 
-1. Sign in → Portal → **Orchestrate mesh**  
-2. Inspect research / computation / creative nodes and amber inter-network edges  
-3. Run a task (e.g. “research X, estimate Y, write a short brief”)  
-4. Sidebar shows AMEP/1 session meta + bus hops + agent log  
+## Agent rules
 
-## Deploy
-
-| Target | Role |
-|--------|------|
-| **Vercel** | Primary — connect GitHub, set env, deploy |
-| **Fly.io / Docker / Render / Railway** | Secondary — same app via `Dockerfile` + standalone Next.js |
-
-```bash
-# Local secondary path
-cp .env.example .env   # AUTH_SECRET, AUTH_URL, Google keys
-docker compose up --build
-
-# Fly.io
-fly secrets set AUTH_SECRET=... AUTH_URL=https://YOURAPP.fly.dev AUTH_TRUST_HOST=true
-fly deploy
-```
-
-Full guide: [docs/DEPLOY.md](docs/DEPLOY.md).
-
-**Primary domain:** [agentxforces.com](https://agentxforces.com)
-
-## Related (not product SOT)
-
-- `reachdavidhuynh/agentforge` — earlier seed  
-- `~/code/amep-network` — Python protocol + SecureBus + sandboxes  
-- `~/Multi-Agent-System` — original Orchestrate Streamlit app  
+[AGENTS.md](AGENTS.md) · Mesh merge history: [docs/MERGE.md](docs/MERGE.md)
 
 ## License
 
