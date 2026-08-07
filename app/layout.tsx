@@ -5,6 +5,7 @@ import { Providers } from './providers';
 export const metadata: Metadata = {
   title: 'AgentForce',
   description: 'Multi-agent graphs with BYOK, auth, and token routing',
+  metadataBase: new URL('https://agentxforce.com'),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

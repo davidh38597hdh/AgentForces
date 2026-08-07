@@ -2,11 +2,14 @@
 
 Multi-agent graph orchestration with per-agent model choice, BYOK API keys, and token routing.
 
+**Live:** [agentxforce.com](https://agentxforce.com)
+
 ## Features
 
 - **Multi-provider agents** — xAI (Grok), OpenAI, Anthropic per node
-- **Connect nodes** — directed graph; topological execution
-- **Roles** — Researcher, Coder, Financial Analyst, Analyst, Writer, Critic
+- **2D graph** — drag-and-drop nodes, fan-in / fan-out connections
+- **Companies & teams** — multi-org graphs with controlled external interfaces
+- **Roles** — Researcher, Coder, Financial Analyst, CEO, Head of Product, and more
 - **BYOK** — paste your API keys in the dashboard (browser storage)
 - **Token router** — control plane → user keys → server env
 - **Auth** — Google + email magic link (NextAuth)
@@ -38,7 +41,7 @@ npm run dev
 
 Vercel: connect this repo, set env vars, deploy.
 
-Domain: agentforceapp.com (if configured)
+**Domain:** [agentxforce.com](https://agentxforce.com)
 
 ## License
 
