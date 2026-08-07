@@ -1,5 +1,11 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {};
+/**
+ * Standalone output enables Docker / Fly / Railway / Render without Vercel.
+ * Vercel ignores standalone and uses its own builder.
+ */
+const nextConfig: NextConfig = {
+  output: 'standalone',
+};
 
 export default nextConfig;

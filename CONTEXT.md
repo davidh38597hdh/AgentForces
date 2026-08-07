@@ -47,7 +47,7 @@ Multi-agent **mesh** product (Orchestrate + AMEP/1 concepts merged 2026-08-07):
 - Companies & teams, roles (Researcher, Coder, etc.)
 - Auth: Google + email magic link (NextAuth v5)
 - Connectors: URL fetch, Slack webhook, generic webhook
-- Deploy target: Vercel
+- Deploy targets: **Vercel (primary)** · **Fly.io / Docker / Render / Railway (secondary)** via standalone + Dockerfile
 
 **Stack:** Next.js 15, React 19, Vercel AI SDK, NextAuth 5, Tailwind, TypeScript.
 
@@ -74,6 +74,8 @@ lib/
   token-router.ts
 docs/
   MERGE.md              # Orchestrate + AMEP → AgentForce map
+  DEPLOY.md             # Vercel + Docker/Fly/Render/Railway
+Dockerfile / fly.toml / render.yaml / docker-compose.yml
 auth.ts
 middleware.ts
 ```

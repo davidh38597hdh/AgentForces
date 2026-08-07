@@ -61,9 +61,24 @@ npm run dev
 
 ## Deploy
 
-Vercel: connect this repo, set env vars, deploy.
+| Target | Role |
+|--------|------|
+| **Vercel** | Primary — connect GitHub, set env, deploy |
+| **Fly.io / Docker / Render / Railway** | Secondary — same app via `Dockerfile` + standalone Next.js |
 
-**Domain:** [agentxforce.com](https://agentxforce.com)
+```bash
+# Local secondary path
+cp .env.example .env   # AUTH_SECRET, AUTH_URL, Google keys
+docker compose up --build
+
+# Fly.io
+fly secrets set AUTH_SECRET=... AUTH_URL=https://YOURAPP.fly.dev AUTH_TRUST_HOST=true
+fly deploy
+```
+
+Full guide: [docs/DEPLOY.md](docs/DEPLOY.md).
+
+**Primary domain:** [agentxforce.com](https://agentxforce.com)
 
 ## Related (not product SOT)
 
