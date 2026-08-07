@@ -81,12 +81,11 @@ Do not treat Streamlit Orchestrate / Python `amep-network` as this repo’s depl
 
 | Mode | When | Behavior |
 |------|------|----------|
-| **Open (default)** | Google env unset, or `AUTH_REQUIRED=false` | Portal + dashboard guest-accessible |
-| **Gated** | `GOOGLE_CLIENT_*` + `AUTH_SECRET` + `AUTH_REQUIRED=true` | Middleware enforces session |
+| **Open** | Google env unset, or `AUTH_REQUIRED=false` | Portal + dashboard guest-accessible |
+| **Gated (default when Google configured)** | `GOOGLE_CLIENT_*` + `AUTH_SECRET` set | Middleware enforces session; **Continue with Google** on `/login` |
 
 - **Do not** re-add email / magic-link unless explicitly requested.
-- **Do not** claim Google sign-in works until env is set and verified end-to-end.
-- Google redirect URI (when enabled): `https://agentxforces.com/api/auth/callback/google` (+ localhost for dev).
+- Google redirect URI: `https://agentxforces.com/api/auth/callback/google` (+ localhost for dev).
 
 ---
 

@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { isAuthRequired } from '@/lib/auth-mode';
 
 export default auth((req) => {
-  // Open product mode: no Google auth yet — do not gate portal/dashboard
+  // Guest mode when Google is not configured (or AUTH_REQUIRED=false)
   if (!isAuthRequired()) {
     return NextResponse.next();
   }

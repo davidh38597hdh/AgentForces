@@ -102,7 +102,9 @@ export default function PortalPage() {
         </div>
 
         <p className="mt-10 text-[11px] text-zinc-600">
-          Open access for now — Google auth is not enabled. BYOK keys stay in your browser.
+          {session?.user?.email
+            ? 'Signed in. BYOK keys stay in your browser.'
+            : 'Guest access. Sign in with Google from the login page when available. BYOK keys stay in your browser.'}
         </p>
       </main>
     </div>
