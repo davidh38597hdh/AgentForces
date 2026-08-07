@@ -37,6 +37,7 @@ See [docs/MERGE.md](docs/MERGE.md) for architecture and status.
 cd ~/code/AgentForces   # or clone path
 npm install
 npm run dev
+# UI visualizer (no deploy): http://localhost:3000/ui
 ```
 
 ### Environment variables
