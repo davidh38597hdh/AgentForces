@@ -1,16 +1,16 @@
 import Link from 'next/link';
 
 const COLORS: { name: string; varName: string; hex: string }[] = [
-  { name: 'Deep bg', varName: '--bg-deep', hex: '#0b0614' },
-  { name: 'Mid bg', varName: '--bg-mid', hex: '#160b2e' },
-  { name: 'Purple deep', varName: '--purple-deep', hex: '#2e1065' },
-  { name: 'Purple', varName: '--purple', hex: '#7c3aed' },
+  { name: 'Black', varName: '--bg-deep', hex: '#000000' },
+  { name: 'Near black', varName: '--bg-mid', hex: '#0a0a0a' },
+  { name: 'Elevated', varName: '--bg-elevated', hex: '#111111' },
+  { name: 'Purple deep', varName: '--purple-deep', hex: '#1a0a2e' },
+  { name: 'Purple', varName: '--purple', hex: '#8b5cf6' },
   { name: 'Purple soft', varName: '--purple-soft', hex: '#a78bfa' },
-  { name: 'Purple light', varName: '--purple-light', hex: '#c4b5fd' },
+  { name: 'Purple light', varName: '--purple-light', hex: '#d4c4fc' },
   { name: 'Cyan', varName: '--cyan', hex: '#22d3ee' },
   { name: 'Cyan soft', varName: '--cyan-soft', hex: '#67e8f9' },
-  { name: 'Cyan dim', varName: '--cyan-dim', hex: '#0891b2' },
-  { name: 'Foreground', varName: '--foreground', hex: '#f5f3ff' },
+  { name: 'Foreground', varName: '--foreground', hex: '#fafafa' },
 ];
 
 /**

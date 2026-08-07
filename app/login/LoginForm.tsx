@@ -32,19 +32,19 @@ export function LoginForm({
   return (
     <div className="min-h-screen af-page-bg text-[var(--foreground)] flex items-center justify-center px-5 relative overflow-hidden">
       <div
-        className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full blur-3xl opacity-40"
-        style={{ background: 'radial-gradient(circle, #22d3ee 0%, transparent 70%)' }}
+        className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full blur-3xl opacity-20"
+        style={{ background: 'radial-gradient(circle, #4c1d95 0%, transparent 70%)' }}
         aria-hidden
       />
       <div className="w-full max-w-sm af-card rounded-2xl px-6 py-8 relative z-10">
         <Link
           href="/"
-          className="text-sm font-semibold text-[var(--purple-light)] hover:text-[var(--cyan-soft)] transition-colors"
+          className="text-sm font-semibold text-zinc-200 hover:text-white transition-colors"
         >
           AgentForces
         </Link>
         <h1 className="mt-8 text-2xl font-semibold tracking-tight af-title-gradient">Sign in</h1>
-        <p className="mt-2 text-sm text-[var(--muted)] leading-relaxed">
+        <p className="mt-2 text-sm text-zinc-500 leading-relaxed">
           {googleEnabled
             ? 'Continue with Google to open your portal and mesh projects.'
             : 'Google is not configured on this deployment. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and AUTH_SECRET on Vercel.'}
