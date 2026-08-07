@@ -34,9 +34,8 @@ body {
 @layer components {
   .af-page-bg {
     background:
-      radial-gradient(ellipse 70% 50% at 15% 0%, rgba(88, 28, 135, 0.18), transparent 55%),
-      radial-gradient(ellipse 55% 40% at 90% 15%, rgba(34, 211, 238, 0.08), transparent 50%),
-      radial-gradient(ellipse 50% 35% at 50% 100%, rgba(88, 28, 135, 0.1), transparent 50%),
+      radial-gradient(ellipse 70% 50% at 15% 0%, rgba(88, 28, 135, 0.14), transparent 55%),
+      radial-gradient(ellipse 55% 40% at 90% 15%, rgba(34, 211, 238, 0.06), transparent 50%),
       linear-gradient(180deg, #000000 0%, #050505 50%, #0a0a0a 100%);
   }
 
@@ -64,6 +63,49 @@ body {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    /* Prevent gradient text from clipping at the bottom */
+    display: block;
+    line-height: 1.25;
+    padding-bottom: 0.2em;
+    margin-bottom: -0.08em;
+    overflow: visible;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  .af-orb {
+    pointer-events: none;
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(64px);
+    will-change: transform;
+  }
+  .af-orb-purple {
+    width: 22rem;
+    height: 22rem;
+    top: 0;
+    left: 0;
+    opacity: 0.28;
+    background: radial-gradient(circle, #6d28d9 0%, transparent 68%);
+    animation: af-drift-purple 20s ease-in-out infinite;
+  }
+  .af-orb-cyan {
+    width: 20rem;
+    height: 20rem;
+    top: 0;
+    left: 0;
+    opacity: 0.18;
+    background: radial-gradient(circle, #22d3ee 0%, transparent 68%);
+    animation: af-drift-cyan 26s ease-in-out infinite;
+  }
+  .af-orb-purple-soft {
+    width: 16rem;
+    height: 16rem;
+    top: 0;
+    left: 0;
+    opacity: 0.16;
+    background: radial-gradient(circle, #a78bfa 0%, transparent 70%);
+    animation: af-drift-purple-soft 24s ease-in-out infinite;
   }
 
   .af-btn-primary {
@@ -87,6 +129,51 @@ body {
     border-color: rgba(167, 139, 250, 0.45);
     color: #fff;
     background: rgba(139, 92, 246, 0.08);
+  }
+}
+
+@keyframes af-drift-purple {
+  0%,
+  100% {
+    transform: translate(0%, 5%) scale(1);
+  }
+  25% {
+    transform: translate(50vw, 20vh) scale(1.12);
+  }
+  50% {
+    transform: translate(20vw, 55vh) scale(0.92);
+  }
+  75% {
+    transform: translate(65vw, 35vh) scale(1.05);
+  }
+}
+
+@keyframes af-drift-cyan {
+  0%,
+  100% {
+    transform: translate(65vw, 8vh) scale(1);
+  }
+  30% {
+    transform: translate(12vw, 40vh) scale(1.15);
+  }
+  55% {
+    transform: translate(48vw, 65vh) scale(0.9);
+  }
+  80% {
+    transform: translate(8vw, 18vh) scale(1.08);
+  }
+}
+
+@keyframes af-drift-purple-soft {
+  0%,
+  100% {
+    transform: translate(35vw, 55vh) scale(1);
+  }
+  40% {
+    transform: translate(8vw, 12vh) scale(1.2);
+  }
+  70% {
+    transform: translate(55vw, 30vh) scale(0.85);
   }
 }
 

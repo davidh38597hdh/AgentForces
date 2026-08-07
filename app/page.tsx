@@ -6,23 +6,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen af-page-bg text-[var(--foreground)] flex flex-col relative overflow-hidden">
-      {/* Soft accent glows on black */}
-      <div
-        className="pointer-events-none absolute -top-32 -left-20 h-80 w-80 rounded-full blur-3xl opacity-25"
-        style={{ background: 'radial-gradient(circle, #4c1d95 0%, transparent 70%)' }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute top-1/4 -right-24 h-72 w-72 rounded-full blur-3xl opacity-15"
-        style={{ background: 'radial-gradient(circle, #0891b2 0%, transparent 70%)' }}
-        aria-hidden
-      />
+      {/* Animated purple / cyan glows */}
+      <div className="af-orb af-orb-purple" aria-hidden />
+      <div className="af-orb af-orb-cyan" aria-hidden />
+      <div className="af-orb af-orb-purple-soft" aria-hidden />
 
       <header className="af-glass relative z-10">
         <div className="max-w-3xl mx-auto px-5 h-14 flex items-center justify-between">
-          <span className="text-sm font-semibold tracking-wide text-zinc-100">
-            AgentForces
-          </span>
+          <span className="text-sm font-semibold tracking-wide text-zinc-100">AgentForces</span>
           <div className="flex items-center gap-5">
             {googleEnabled && (
               <Link
@@ -42,10 +33,13 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl mx-auto px-5 pt-20 sm:pt-28 pb-16 w-full relative z-10">
-        <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight af-title-gradient mb-6 sm:mb-8">
-          AgentForces
-        </h1>
+      <main className="flex-1 max-w-3xl mx-auto px-5 pt-20 sm:pt-28 pb-16 w-full relative z-10 overflow-visible">
+        {/* Title outside card; extra space so gradient text is not clipped */}
+        <div className="mb-6 sm:mb-8 overflow-visible">
+          <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight af-title-gradient">
+            AgentForces
+          </h1>
+        </div>
 
         <div className="af-card rounded-3xl px-6 sm:px-10 py-10 sm:py-12">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500 mb-5">
@@ -80,9 +74,7 @@ export default function Home() {
 
       <footer className="relative z-10 border-t border-white/[0.06]">
         <div className="max-w-3xl mx-auto px-5 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <p className="text-xs text-zinc-600 tracking-wide">
-            Orchestrate Utilizing AMEP/1
-          </p>
+          <p className="text-xs text-zinc-600 tracking-wide">Orchestrate Utilizing AMEP/1</p>
           <p className="text-[11px] text-zinc-600">agentxforces.com</p>
         </div>
       </footer>
