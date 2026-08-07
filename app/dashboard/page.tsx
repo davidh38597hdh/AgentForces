@@ -535,50 +535,42 @@ function Dashboard() {
   const [inspectorTab, setInspectorTab] = useState<'configure' | 'run'>('configure');
 
   useEffect(() => {
+    // Global API keys: never seed defaults. Only restore user-added entries with content.
     try {
       const raw = localStorage.getItem(GLOBAL_KEYS_STORAGE);
       if (raw) {
         const parsed = JSON.parse(raw) as GlobalApiKey[];
         if (Array.isArray(parsed)) {
-          setGlobalKeys(
-            parsed
-              .filter((k) => k && typeof k.id === 'string')
-              .map((k) => ({
-                id: k.id,
-                name: typeof k.name === 'string' ? k.name : '',
-                provider:
-                  k.provider === 'xai' || k.provider === 'openai' || k.provider === 'anthropic'
-                    ? k.provider
-                    : null,
-                key: typeof k.key === 'string' ? k.key : '',
-              }))
-          );
+          const restored = parsed
+            .filter((k) => k && typeof k.id === 'string')
+            .map((k) => ({
+              id: k.id,
+              name: typeof k.name === 'string' ? k.name : '',
+              provider:
+                k.provider === 'xai' || k.provider === 'openai' || k.provider === 'anthropic'
+                  ? k.provider
+                  : null,
+              key: typeof k.key === 'string' ? k.key : '',
+            }))
+            // Drop empty stubs (no secret) so the catalog stays empty until real keys are added
+            .filter((k) => k.key.trim().length > 0);
+          setGlobalKeys(restored);
+          try {
+            localStorage.setItem(GLOBAL_KEYS_STORAGE, JSON.stringify(restored));
+            localStorage.setItem(KEYS_STORAGE, JSON.stringify(globalKeysToUserBag(restored)));
+          } catch {}
         }
       } else {
-        // Migrate legacy flat map once → no default keys if empty
-        const legacy = localStorage.getItem(KEYS_STORAGE);
-        if (legacy) {
-          const flat = JSON.parse(legacy) as UserKeys;
-          const migrated: GlobalApiKey[] = [];
-          for (const p of PROVIDER_KEY_OPTIONS) {
-            const v = flat[p.id]?.trim();
-            if (!v) continue;
-            migrated.push({
-              id: newApiKeyId(),
-              name: p.label,
-              provider: p.id,
-              key: v,
-            });
-          }
-          if (migrated.length) {
-            setGlobalKeys(migrated);
-            try {
-              localStorage.setItem(GLOBAL_KEYS_STORAGE, JSON.stringify(migrated));
-            } catch {}
-          }
-        }
+        // Explicit empty catalog — do not migrate legacy flat keys (avoids reintroducing "defaults")
+        setGlobalKeys([]);
+        try {
+          localStorage.setItem(GLOBAL_KEYS_STORAGE, JSON.stringify([]));
+          localStorage.removeItem(KEYS_STORAGE);
+        } catch {}
       }
-    } catch {}
+    } catch {
+      setGlobalKeys([]);
+    }
     try {
       const raw = localStorage.getItem(CONNECTORS_STORAGE);
       if (raw) {
@@ -803,8 +795,12 @@ function Dashboard() {
     setGlobalKeys(next);
     try {
       localStorage.setItem(GLOBAL_KEYS_STORAGE, JSON.stringify(next));
-      // Keep legacy bag in sync for any older code paths
-      localStorage.setItem(KEYS_STORAGE, JSON.stringify(globalKeysToUserBag(next)));
+      const bag = globalKeysToUserBag(next);
+      if (Object.keys(bag).length) {
+        localStorage.setItem(KEYS_STORAGE, JSON.stringify(bag));
+      } else {
+        localStorage.removeItem(KEYS_STORAGE);
+      }
     } catch {}
   }, []);
 
@@ -1388,8 +1384,8 @@ function Dashboard() {
               <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center">
                 <p className="text-sm text-zinc-700 font-medium">No global API keys</p>
                 <p className="text-[11px] text-zinc-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                  Add one without choosing a provider first, then assign xAI, Claude, or OpenAI when
-                  you are ready.
+                  Nothing is set up by default. Add a key when you need one — start provider-agnostic,
+                  then bind xAI, Claude, or OpenAI.
                 </p>
                 <button
                   type="button"
