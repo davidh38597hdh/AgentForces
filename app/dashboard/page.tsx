@@ -1818,155 +1818,196 @@ function Dashboard() {
                 fitEpoch={fitEpoch}
               />
 
-              {/* Company switcher — primary mesh UI control */}
+              {/* Canvas actions — top; legends live bottom-left */}
               <Panel position="top-center" className="!m-3">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-xl border border-zinc-800 bg-black/95 p-1.5 backdrop-blur shadow-xl">
-                    <button
-                      type="button"
-                      onClick={() => switchCompanyFocus('all')}
-                      className={`text-[11px] px-2.5 py-1.5 rounded-lg transition-colors ${
-                        focusCompanyId === 'all'
-                          ? 'bg-zinc-100 text-black font-medium'
-                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
-                      }`}
-                    >
-                      All companies
-                      <span className="ml-1.5 text-[10px] opacity-70 tabular-nums">
-                        {agentNodes.length}
-                      </span>
-                    </button>
-                    <span className="h-4 w-px bg-zinc-800 mx-0.5 hidden sm:block" />
-                    {companiesOnMesh.map((c) => {
-                      const count = companyCounts.get(c.name) || 0;
-                      const active = focusCompanyId === c.id;
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => switchCompanyFocus(c.id)}
-                          title={`Focus ${c.name} on the mesh`}
-                          className={`inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg transition-colors border ${
-                            active
-                              ? 'text-zinc-50 border-transparent'
-                              : 'text-zinc-400 border-transparent hover:text-zinc-200 hover:bg-zinc-900'
-                          }`}
-                          style={
-                            active
-                              ? {
-                                  backgroundColor: `${c.color}33`,
-                                  boxShadow: `inset 0 0 0 1px ${c.color}88`,
-                                }
-                              : undefined
-                          }
-                        >
-                          <span
-                            className="h-2 w-2 rounded-full shrink-0"
-                            style={{ backgroundColor: c.color }}
-                          />
-                          <span className="max-w-[7rem] truncate">{c.name}</span>
-                          <span className="text-[10px] opacity-70 tabular-nums">{count}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5 rounded-lg border border-zinc-800 bg-black/90 p-1 backdrop-blur">
-                    <button
-                      type="button"
-                      onClick={arrangeByCompany}
-                      className="text-[11px] px-2 py-1 rounded-md text-cyan-400/90 hover:text-cyan-300"
-                      title="Layout agents into company columns"
-                    >
-                      Arrange by company
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowCompanyLanes((v) => !v)}
-                      className={`text-[11px] px-2 py-1 rounded-md border border-zinc-800 ${
-                        showCompanyLanes ? 'text-violet-300' : 'text-zinc-500 hover:text-zinc-300'
-                      }`}
-                    >
-                      {showCompanyLanes ? 'Lanes on' : 'Lanes off'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={seedTwoCompanies}
-                      className="text-[11px] px-2 py-1 rounded-md text-amber-500/90 hover:text-amber-400"
-                    >
-                      Demo: 2 orgs
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEdges([])}
-                      className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
-                    >
-                      Clear links
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLibraryOpen((o) => !o)}
-                      className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-800"
-                    >
-                      {libraryOpen ? 'Hide library' : 'Library'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInspectorOpen((o) => !o)}
-                      className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-800"
-                    >
-                      {inspectorOpen ? 'Hide inspector' : 'Inspector'}
-                    </button>
-                  </div>
+                <div className="flex flex-wrap items-center justify-center gap-1 rounded-lg border border-zinc-800 bg-black/90 p-1 backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={arrangeByCompany}
+                    className="text-[11px] px-2 py-1 rounded-md text-cyan-400/90 hover:text-cyan-300"
+                    title="Layout agents into company columns"
+                  >
+                    Arrange by company
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCompanyLanes((v) => !v)}
+                    className={`text-[11px] px-2 py-1 rounded-md border border-zinc-800 ${
+                      showCompanyLanes ? 'text-violet-300' : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    {showCompanyLanes ? 'Lanes on' : 'Lanes off'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={seedTwoCompanies}
+                    className="text-[11px] px-2 py-1 rounded-md text-amber-500/90 hover:text-amber-400"
+                  >
+                    Demo: 2 orgs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEdges([])}
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
+                  >
+                    Clear links
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryOpen((o) => !o)}
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-800"
+                  >
+                    {libraryOpen ? 'Hide library' : 'Library'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInspectorOpen((o) => !o)}
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-800"
+                  >
+                    {inspectorOpen ? 'Hide inspector' : 'Inspector'}
+                  </button>
                 </div>
               </Panel>
 
+              {/* Mesh legend — bottom left, clearly labeled */}
               <Panel position="bottom-left" className="!m-3">
-                <div className="space-y-1.5 max-w-md">
-                  <div className="flex flex-wrap gap-1.5 rounded-lg border border-zinc-800 bg-black/90 px-2 py-1.5">
-                    <span className="text-[10px] text-zinc-600 self-center pr-1">View</span>
-                    {companiesOnMesh.map((c) => {
-                      const active = focusCompanyId === c.id;
-                      return (
+                <div className="w-[min(100vw-2rem,20rem)] space-y-2">
+                  <div className="rounded-xl border border-zinc-800 bg-black/95 backdrop-blur shadow-xl overflow-hidden">
+                    <div className="px-3 py-2 border-b border-zinc-800/80 flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
+                        Mesh legend
+                      </p>
+                      <span className="text-[10px] text-zinc-600 tabular-nums">
+                        {agentNodes.length} agent{agentNodes.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+
+                    {/* Companies / focus filter */}
+                    <div className="px-3 py-2.5 border-b border-zinc-800/60">
+                      <p className="text-[10px] font-medium text-zinc-500 mb-1.5">
+                        Companies{' '}
+                        <span className="font-normal text-zinc-600">— click to focus</span>
+                      </p>
+                      <div className="flex flex-wrap gap-1">
                         <button
-                          key={`leg-${c.id}`}
                           type="button"
-                          onClick={() => switchCompanyFocus(c.id)}
-                          className={`flex items-center gap-1.5 text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
-                            active ? 'text-zinc-100 bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300'
+                          onClick={() => switchCompanyFocus('all')}
+                          className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
+                            focusCompanyId === 'all'
+                              ? 'border-white/30 bg-zinc-800 text-zinc-100'
+                              : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
                           }`}
                         >
-                          <span
-                            className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: c.color }}
-                          />
-                          {c.name}
+                          All ({agentNodes.length})
                         </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => switchCompanyFocus('all')}
-                      className={`text-[10px] px-1.5 py-0.5 rounded-md ${
-                        focusCompanyId === 'all'
-                          ? 'text-zinc-100 bg-zinc-800'
-                          : 'text-zinc-500 hover:text-zinc-300'
-                      }`}
-                    >
-                      All
-                    </button>
-                    <span className="flex items-center gap-1.5 text-[10px] text-amber-500/80 ml-1">
-                      <span className="h-0.5 w-4 border-t border-dashed border-amber-500" />
-                      Ext link
-                    </span>
+                        {companiesOnMesh.length === 0 ? (
+                          <span className="text-[10px] text-zinc-600 self-center px-1">
+                            None yet — add in Library → Companies
+                          </span>
+                        ) : (
+                          companiesOnMesh.map((c) => {
+                            const count = companyCounts.get(c.name) || 0;
+                            const active = focusCompanyId === c.id;
+                            return (
+                              <button
+                                key={`leg-${c.id}`}
+                                type="button"
+                                onClick={() => switchCompanyFocus(c.id)}
+                                title={`Focus ${c.name}`}
+                                className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-md border transition-colors ${
+                                  active
+                                    ? 'text-zinc-100 border-transparent'
+                                    : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                                }`}
+                                style={
+                                  active
+                                    ? {
+                                        backgroundColor: `${c.color}33`,
+                                        boxShadow: `inset 0 0 0 1px ${c.color}88`,
+                                      }
+                                    : undefined
+                                }
+                              >
+                                <span
+                                  className="h-2 w-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: c.color }}
+                                />
+                                <span className="max-w-[6.5rem] truncate">{c.name}</span>
+                                <span className="opacity-70 tabular-nums">{count}</span>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Symbol key */}
+                    <div className="px-3 py-2.5 space-y-2">
+                      <p className="text-[10px] font-medium text-zinc-500">
+                        Symbols{' '}
+                        <span className="font-normal text-zinc-600">— what you see on the graph</span>
+                      </p>
+                      <ul className="space-y-1.5">
+                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
+                          <span
+                            className="w-7 shrink-0 border-t-2 border-zinc-500"
+                            aria-hidden
+                          />
+                          <span>
+                            <span className="text-zinc-300">Internal link</span>
+                            <span className="text-zinc-600"> — same company / network</span>
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
+                          <span
+                            className="w-7 shrink-0 border-t-2 border-dashed border-amber-500"
+                            aria-hidden
+                          />
+                          <span>
+                            <span className="text-amber-400/90">External / Ext link</span>
+                            <span className="text-zinc-600"> — cross-company or inter-network</span>
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
+                          <span className="w-7 shrink-0 flex justify-center" aria-hidden>
+                            <span className="text-[8px] uppercase tracking-wide text-amber-400/90 border border-amber-500/40 rounded px-0.5">
+                              Ext
+                            </span>
+                          </span>
+                          <span>
+                            <span className="text-zinc-300">Ext agent</span>
+                            <span className="text-zinc-600"> — may talk across boundaries</span>
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
+                          <span className="w-7 shrink-0 flex justify-center" aria-hidden>
+                            <span className="h-2.5 w-2.5 rounded border border-dashed border-violet-500/50 bg-violet-500/10" />
+                          </span>
+                          <span>
+                            <span className="text-zinc-300">Company lane</span>
+                            <span className="text-zinc-600"> — dashed frame around an org</span>
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
+                          <span className="w-7 shrink-0 flex justify-center" aria-hidden>
+                            <span className="h-2 w-2 rounded-full bg-zinc-500 ring-2 ring-white/20" />
+                          </span>
+                          <span>
+                            <span className="text-zinc-300">Node color</span>
+                            <span className="text-zinc-600"> — company or role accent</span>
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
+
                   {selected && (
-                    <div className="rounded-lg border border-zinc-800 bg-black/90 px-2.5 py-2">
-                      <p className="text-[10px] text-zinc-500 mb-1.5">
-                        Move{' '}
-                        <span className="text-zinc-300">
-                          {(selected.data as AgentNodeData).name}
-                        </span>{' '}
-                        to company
+                    <div className="rounded-xl border border-zinc-800 bg-black/95 backdrop-blur px-3 py-2.5">
+                      <p className="text-[10px] font-medium text-zinc-500 mb-1.5">
+                        Assign company{' '}
+                        <span className="font-normal text-zinc-600">
+                          — {(selected.data as AgentNodeData).name}
+                        </span>
                       </p>
                       <div className="flex flex-wrap gap-1">
                         <button
@@ -2007,11 +2048,17 @@ function Dashboard() {
                             </button>
                           );
                         })}
+                        {companies.length === 0 && (
+                          <span className="text-[10px] text-zinc-600 self-center">
+                            Create companies in Library first
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
+
                   {connectHint && (
-                    <p className="text-[10px] text-amber-400 bg-black/90 border border-zinc-800 rounded px-2 py-1">
+                    <p className="text-[10px] text-amber-400 bg-black/90 border border-zinc-800 rounded-lg px-2.5 py-1.5">
                       {connectHint}
                     </p>
                   )}
