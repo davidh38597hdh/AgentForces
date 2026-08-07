@@ -1,13 +1,13 @@
-# AgentxForces — project handoff
+# AgentForces — project handoff
 
 **Updated:** 2026-08-07  
 **Status:** **active**  
-**Product name:** AgentxForces  
-**Repo (GitHub SOT):** [davidh38597hdh/AgentxForces](https://github.com/davidh38597hdh/AgentxForces)  
-**Remote:** `davidh` → `git@github.com:davidh38597hdh/AgentxForces.git` (tracks `main`)  
-**Upstream copy:** [reachdavidhuynh/AgentxForces](https://github.com/reachdavidhuynh/AgentxForces) (`origin`, not primary)  
-**Local path:** `~/code/AgentxForces`  
-**Live:** [agentxforces.com](https://agentxforces.com)  
+**Product name:** AgentForces  
+**Repo (GitHub SOT):** [davidh38597hdh/AgentForces](https://github.com/davidh38597hdh/AgentForces)  
+**Remote:** `davidh` → `git@github.com:davidh38597hdh/AgentForces.git` (tracks `main`)  
+**Upstream copy:** [reachdavidhuynh/AgentForces](https://github.com/reachdavidhuynh/AgentForces) (`origin`, not primary)  
+**Local path:** `~/code/AgentForces`  
+**Live:** [agentforces.com](https://agentforces.com)  
 **Related (earlier cut):** [reachdavidhuynh/agentforge](https://github.com/reachdavidhuynh/agentforge) — not source of truth  
 
 Global queue + handles: `~/.grok/memory/MEMORY.md`  
@@ -19,7 +19,7 @@ Paradigm: `~/.grok/memory/AGENT_NETWORK_PARADIGM.md`
 
 | Priority | Project | Path | Status | Chief |
 |---|---|---|---|---|
-| **Active product** | AgentxForces | `~/code/AgentxForces` | **active** | `@chief-agentxforces` |
+| **Active product** | AgentForces | `~/code/AgentForces` | **active** | `@chief-agentforces` |
 
 ---
 
@@ -27,7 +27,7 @@ Paradigm: `~/.grok/memory/AGENT_NETWORK_PARADIGM.md`
 
 | Handle(s) | Role | Status |
 |---|---|---|
-| `@chief-agentxforces` · `agentxforces:` · `af:` · `chief-agentxforces:` | Chief / coordinator | active |
+| `@chief-agentforces` · `agentforces:` · `af:` · `chief-agentforces:` | Chief / coordinator | active |
 | `@af-product` · `af-product:` | Product / positioning | unassigned (chief covers; **user input required** for major product calls) |
 | `@af-eng` · `af-eng:` | Engineering (Next.js, graph, orchestrate API) | unassigned (chief covers) |
 | `@af-auth` · `af-auth:` | Auth / NextAuth / identity | unassigned |
@@ -73,7 +73,7 @@ lib/
   seed-graph.ts
   token-router.ts
 docs/
-  MERGE.md              # Orchestrate + AMEP → AgentxForces map
+  MERGE.md              # Orchestrate + AMEP → AgentForces map
   DEPLOY.md             # Vercel + Docker/Fly/Render/Railway
 Dockerfile / fly.toml / render.yaml / docker-compose.yml
 auth.ts
@@ -92,7 +92,7 @@ middleware.ts
 ## Resume
 
 ```bash
-cd ~/code/AgentxForces
+cd ~/code/AgentForces
 npm install
 npm run dev
 ```

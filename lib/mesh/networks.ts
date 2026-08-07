@@ -1,6 +1,6 @@
 /**
  * Default Orchestrate team catalog (research / computation / creative)
- * mapped into AgentxForces network specs.
+ * mapped into AgentForces network specs.
  */
 
 export type RoleSpec = {

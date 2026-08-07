@@ -4,13 +4,13 @@
 #   docker compose up --build
 
 services:
-  agentxforces:
+  agentforces:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-    image: agentxforces:local
+    image: agentforces:local
     ports:
       - "${PORT:-3000}:3000"
     env_file:

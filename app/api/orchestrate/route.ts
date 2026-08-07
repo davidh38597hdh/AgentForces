@@ -41,7 +41,7 @@ export async function POST(req: Request) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            text: `*AgentxForces mesh outcome* (${result.session.protocol})\n\n${outcome.slice(0, 3500)}`,
+            text: `*AgentForces mesh outcome* (${result.session.protocol})\n\n${outcome.slice(0, 3500)}`,
           }),
         });
       } catch {

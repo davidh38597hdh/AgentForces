@@ -13,7 +13,7 @@ function LoginForm() {
     <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 flex items-center justify-center px-5">
       <div className="w-full max-w-sm">
         <Link href="/" className="text-sm font-medium text-zinc-500">
-          AgentxForces
+          AgentForces
         </Link>
         <h1 className="mt-10 text-2xl font-medium tracking-tight text-zinc-200">Sign in</h1>
         <p className="mt-2 text-sm text-zinc-500 leading-relaxed">
@@ -49,7 +49,7 @@ function LoginForm() {
         <p className="mt-8 text-[11px] text-zinc-600 leading-relaxed">
           Requires <code className="text-zinc-500">GOOGLE_CLIENT_ID</code> and{' '}
           <code className="text-zinc-500">GOOGLE_CLIENT_SECRET</code> on the server. Redirect URI:{' '}
-          <code className="text-zinc-500">https://agentxforces.com/api/auth/callback/google</code>
+          <code className="text-zinc-500">https://agentforces.com/api/auth/callback/google</code>
         </p>
       </div>
     </div>

@@ -9,7 +9,7 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
-      service: 'agentxforces',
+      service: 'agentforces',
       deployTarget: getDeployTarget(),
       protocol: 'AMEP/1',
       ts: new Date().toISOString(),

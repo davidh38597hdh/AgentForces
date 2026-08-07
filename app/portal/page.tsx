@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { PROJECT_TEMPLATES } from '@/lib/projects';
 
-const ONBOARD_KEY = 'agentxforces_onboarded_v1';
-const LAST_PROJECT_KEY = 'agentxforces_last_project_v1';
+const ONBOARD_KEY = 'agentforces_onboarded_v1';
+const LAST_PROJECT_KEY = 'agentforces_last_project_v1';
 
 export default function PortalPage() {
   const { data: session, status } = useSession();
@@ -47,7 +47,7 @@ export default function PortalPage() {
       <header className="border-b border-zinc-900">
         <div className="max-w-3xl mx-auto px-5 h-12 flex items-center justify-between">
           <Link href="/" className="text-sm font-medium text-zinc-500">
-            AgentxForces
+            AgentForces
           </Link>
           <div className="flex items-center gap-3 text-xs text-zinc-500">
             {session?.user?.email && (

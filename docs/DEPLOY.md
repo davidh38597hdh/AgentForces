@@ -1,4 +1,4 @@
-# Deploy AgentxForces
+# Deploy AgentForces
 
 | Target | Role | How |
 |--------|------|-----|
@@ -23,7 +23,7 @@ Copy [`.env.example`](../.env.example) and set at least:
 Google OAuth authorized redirect URIs (examples):
 
 ```
-https://agentxforces.com/api/auth/callback/google
+https://agentforces.com/api/auth/callback/google
 https://YOURAPP.fly.dev/api/auth/callback/google
 http://localhost:3000/api/auth/callback/google
 ```
@@ -36,9 +36,9 @@ Next.js is built with **`output: 'standalone'`** so the same image runs on Fly, 
 
 ## 1. Vercel (primary)
 
-1. Import `davidh38597hdh/AgentxForces` (or your fork).
+1. Import `davidh38597hdh/AgentForces` (or your fork).
 2. Set env vars in the Vercel project.
-3. Deploy. Domain: [agentxforces.com](https://agentxforces.com).
+3. Deploy. Domain: [agentforces.com](https://agentforces.com).
 
 Optional: `DEPLOY_TARGET=vercel` (auto-detected via `VERCEL=1`).
 
@@ -49,12 +49,12 @@ Optional: `DEPLOY_TARGET=vercel` (auto-detected via `VERCEL=1`).
 ```bash
 # one-time
 fly auth login
-fly apps create agentxforces   # or edit app name in fly.toml
+fly apps create agentforces   # or edit app name in fly.toml
 
 fly secrets set \
   AUTH_SECRET="$(openssl rand -base64 32)" \
-  AUTH_URL="https://agentxforces.fly.dev" \
-  NEXT_PUBLIC_APP_URL="https://agentxforces.fly.dev" \
+  AUTH_URL="https://agentforces.fly.dev" \
+  NEXT_PUBLIC_APP_URL="https://agentforces.fly.dev" \
   AUTH_TRUST_HOST=true \
   GOOGLE_CLIENT_ID=... \
   GOOGLE_CLIENT_SECRET=... \

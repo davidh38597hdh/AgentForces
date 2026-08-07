@@ -1,11 +1,11 @@
 # Fly.io — secondary production target (Docker). Primary remains Vercel.
 # Setup:
 #   fly auth login
-#   fly launch --no-deploy   # or: fly apps create agentxforces
+#   fly launch --no-deploy   # or: fly apps create agentforces
 #   fly secrets set AUTH_SECRET=... AUTH_URL=https://YOURAPP.fly.dev AUTH_TRUST_HOST=true ...
 #   fly deploy
 
-app = "agentxforces"
+app = "agentforces"
 primary_region = "iad"
 
 [build]

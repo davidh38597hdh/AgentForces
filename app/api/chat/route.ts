@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const messages = body.messages ?? [];
     const system =
       body.system ||
-      'You are a helpful AI agent in a multi-agent team on AgentxForces.';
+      'You are a helpful AI agent in a multi-agent team on AgentForces.';
 
     const result = streamText({
       model: xai('grok-3'),

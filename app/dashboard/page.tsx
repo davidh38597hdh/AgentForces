@@ -49,7 +49,7 @@ type SessionMeta = {
   transport: string;
 };
 
-const KEYS_STORAGE = 'agentxforces_user_keys_v1';
+const KEYS_STORAGE = 'agentforces_user_keys_v1';
 
 const COMPANIES = [
   { id: 'acme', name: 'Acme Corp', color: '#3b82f6' },
@@ -487,7 +487,7 @@ function Dashboard() {
         <div className="px-4 h-12 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-sm font-medium text-zinc-300">
-              AgentxForces
+              AgentForces
             </Link>
             <span className="text-[11px] text-zinc-600 hidden sm:inline">
               Orchestrate mesh · AMEP/1 · multi-company
