@@ -1,5 +1,5 @@
 import { xai } from '@ai-sdk/xai';
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText, convertToCoreMessages } from 'ai';
 
 export const maxDuration = 30;
 
@@ -9,17 +9,15 @@ export async function POST(req: Request) {
     const messages = body.messages ?? [];
     const system =
       body.system ||
-      'You are a helpful AI agent in a multi-agent team on AgentxForce.';
-
-    const modelMessages = await convertToModelMessages(messages);
+      'You are a helpful AI agent in a multi-agent team on AgentForce.';
 
     const result = streamText({
       model: xai('grok-3'),
       system,
-      messages: modelMessages,
+      messages: convertToCoreMessages(messages),
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error: any) {
     console.error('Chat API error:', error);
     return new Response(
