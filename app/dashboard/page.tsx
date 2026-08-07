@@ -2025,9 +2025,9 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setInspectorOpen((o) => !o)}
-                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-200"
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-600 hover:text-cyan-700 border border-zinc-200"
                   >
-                    {inspectorOpen ? 'Hide inspector' : 'Inspector'}
+                    {inspectorOpen ? 'Collapse inspector' : 'Expand inspector'}
                   </button>
                 </div>
               </Panel>
@@ -2036,89 +2036,52 @@ function Dashboard() {
           </ReactFlowProvider>
         </div>
 
-        {/* Mesh legend — bottom-right (inspector corner); always visible */}
-        <div
-          className="absolute bottom-3 z-30 pointer-events-auto transition-[right,width] duration-200 ease-out"
-          style={{
-            right: inspectorOpen ? 12 : 12,
-            width: inspectorOpen ? 296 : undefined,
-            maxWidth: inspectorOpen ? 296 : 'min(18.5rem, calc(100vw - 1.5rem))',
-          }}
-        >
-          <MeshLegend
-            agentCount={agentNodes.length}
-            companiesOnMesh={companiesOnMesh}
-            companies={companies}
-            companyCounts={companyCounts}
-            focusCompanyId={focusCompanyId}
-            onFocusCompany={switchCompanyFocus}
-            selectedName={
-              selected ? (selected.data as AgentNodeData).name : null
-            }
-            selectedCompany={
-              selected ? (selected.data as AgentNodeData).company : undefined
-            }
-            onAssignCompany={assignSelectedToCompany}
-            connectHint={connectHint}
-            dockedToInspector={inspectorOpen}
-          />
-        </div>
 
-        {!inspectorOpen && (
-          <button
-            type="button"
-            onClick={() => setInspectorOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 rounded-l-lg border border-r-0 border-zinc-300 bg-white/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-cyan-600"
-            style={{ writingMode: 'vertical-rl' }}
-            title="Show agent inspector"
-          >
-            Inspector
-          </button>
-        )}
-
-        {/* —— Right: Agent customization (toggle) —— */}
-        <aside
-          className={`shrink-0 border-l border-zinc-200 bg-white flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
-            inspectorOpen ? 'w-[320px]' : 'w-0 border-l-0'
-          }`}
-        >
-          <div className="w-[320px] h-full flex flex-col min-h-0">
-            <div className="px-3 py-2 border-b border-zinc-200 flex items-center justify-between gap-2">
-              <div className="flex rounded-lg border border-zinc-200 p-0.5 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setInspectorTab('configure')}
-                  className={`px-2.5 py-1 rounded-md ${
-                    inspectorTab === 'configure'
-                      ? 'bg-zinc-900 text-white'
-                      : 'text-zinc-500 hover:text-zinc-800'
-                  }`}
-                >
-                  Configure
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInspectorTab('run')}
-                  className={`px-2.5 py-1 rounded-md ${
-                    inspectorTab === 'run'
-                      ? 'bg-zinc-900 text-white'
-                      : 'text-zinc-500 hover:text-zinc-800'
-                  }`}
-                >
-                  Run
-                </button>
-              </div>
+        {/* —— Right rail: inspector body (collapsible) + mesh legend footer (always) —— */}
+        <aside className="w-[300px] shrink-0 border-l border-zinc-200 bg-white flex flex-col min-h-0">
+          <div className="px-3 py-2 border-b border-zinc-200 flex items-center justify-between gap-2 shrink-0">
+            <div className="flex rounded-lg border border-zinc-200 p-0.5 text-[11px]">
               <button
                 type="button"
-                onClick={() => setInspectorOpen(false)}
-                className="text-zinc-500 hover:text-zinc-800 text-xs px-1.5 py-1 rounded border border-zinc-200"
-                title="Hide inspector"
+                onClick={() => {
+                  setInspectorOpen(true);
+                  setInspectorTab('configure');
+                }}
+                className={`px-2.5 py-1 rounded-md ${
+                  inspectorOpen && inspectorTab === 'configure'
+                    ? 'bg-zinc-900 text-white'
+                    : 'text-zinc-500 hover:text-zinc-800'
+                }`}
               >
-                ›
+                Configure
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInspectorOpen(true);
+                  setInspectorTab('run');
+                }}
+                className={`px-2.5 py-1 rounded-md ${
+                  inspectorOpen && inspectorTab === 'run'
+                    ? 'bg-zinc-900 text-white'
+                    : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+              >
+                Run
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setInspectorOpen((o) => !o)}
+              className="text-zinc-500 hover:text-zinc-800 text-xs px-1.5 py-1 rounded border border-zinc-200"
+              title={inspectorOpen ? 'Collapse inspector body' : 'Expand inspector body'}
+            >
+              {inspectorOpen ? '▾' : '▴'}
+            </button>
+          </div>
 
-            <div className="flex-1 overflow-y-auto">
+          {inspectorOpen ? (
+            <div className="flex-1 overflow-y-auto min-h-0">
               {inspectorTab === 'configure' && (
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -2519,7 +2482,41 @@ function Dashboard() {
                   )}
                 </div>
               )}
+
             </div>
+          ) : (
+            <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 px-4 py-6 bg-zinc-50/50">
+              <p className="text-[11px] text-zinc-500 text-center leading-relaxed">
+                Agent configure / run is collapsed.
+              </p>
+              <button
+                type="button"
+                onClick={() => setInspectorOpen(true)}
+                className="text-[11px] px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 hover:bg-white"
+              >
+                Expand inspector
+              </button>
+            </div>
+          )}
+
+          {/* Mesh legend — permanent footer of the inspector rail */}
+          <div className="shrink-0">
+            <MeshLegend
+              agentCount={agentNodes.length}
+              companiesOnMesh={companiesOnMesh}
+              companies={companies}
+              companyCounts={companyCounts}
+              focusCompanyId={focusCompanyId}
+              onFocusCompany={switchCompanyFocus}
+              selectedName={
+                selected ? (selected.data as AgentNodeData).name : null
+              }
+              selectedCompany={
+                selected ? (selected.data as AgentNodeData).company : undefined
+              }
+              onAssignCompany={assignSelectedToCompany}
+              connectHint={connectHint}
+            />
           </div>
         </aside>
       </div>
