@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { PROJECT_TEMPLATES } from '@/lib/projects';
 import { Logo } from '@/components/Logo';
+import { UserMenu } from '@/components/UserMenu';
 
 const ONBOARD_KEY = 'agentforces_onboarded_v1';
 const LAST_PROJECT_KEY = 'agentforces_last_project_v1';
@@ -47,20 +48,11 @@ export default function PortalPage() {
             AgentForces
           </Link>
           <div className="flex items-center gap-3 text-xs text-zinc-500">
-            {session?.user?.email ? (
-              <>
-                <span className="hidden sm:inline text-zinc-500">{session.user.email}</span>
-                <button
-                  type="button"
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className="hover:text-zinc-800"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <span className="text-zinc-500">Guest · no sign-in</span>
-            )}
+            <UserMenu
+              email={session?.user?.email}
+              name={session?.user?.name}
+              image={session?.user?.image}
+            />
           </div>
         </div>
       </header>

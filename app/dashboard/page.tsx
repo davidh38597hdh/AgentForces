@@ -3,7 +3,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
+import { UserMenu, loadUserPrefs } from '@/components/UserMenu';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -503,6 +504,11 @@ function Dashboard() {
   const [globalKeys, setGlobalKeys] = useState<GlobalApiKey[]>([]);
   const [showKeys, setShowKeys] = useState(false);
   const [revealKeys, setRevealKeys] = useState(false);
+
+  useEffect(() => {
+    const prefs = loadUserPrefs();
+    if (prefs.revealKeysByDefault) setRevealKeys(true);
+  }, []);
 
   const userKeys = useMemo(() => globalKeysToUserBag(globalKeys), [globalKeys]);
   const [connectors, setConnectors] = useState<ConnectorConfig[]>([]);
@@ -1314,22 +1320,24 @@ function Dashboard() {
                 <span className="text-[10px] tabular-nums text-zinc-500">{connectors.length}</span>
               )}
             </button>
-            {session?.user?.email ? (
-              <>
-                <span className="text-zinc-500 hidden md:inline truncate max-w-[10rem]">
-                  {session.user.email}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className="hover:text-zinc-700"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <span className="text-zinc-500">Guest</span>
-            )}
+            <UserMenu
+              email={session?.user?.email}
+              name={session?.user?.name}
+              image={session?.user?.image}
+              onOpenApiKeys={() => {
+                setShowKeys(true);
+                setShowConnectors(false);
+              }}
+              onOpenConnectors={() => {
+                setShowConnectors(true);
+                setShowKeys(false);
+              }}
+              onPrefsChange={(p) => {
+                if (typeof p.revealKeysByDefault === 'boolean') {
+                  setRevealKeys(p.revealKeysByDefault);
+                }
+              }}
+            />
           </div>
         </div>
       </header>
