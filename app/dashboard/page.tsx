@@ -1250,8 +1250,8 @@ function Dashboard() {
   };
 
   return (
-    <div className="af-app h-screen flex flex-col bg-zinc-50 text-zinc-900">
-      <header className="af-app-header border-b border-zinc-200 bg-white shrink-0">
+    <div className="af-app h-dvh max-h-dvh overflow-hidden flex flex-col bg-zinc-50 text-zinc-900">
+      <header className="af-app-header border-b border-zinc-200 bg-white shrink-0 z-20">
         <div className="px-4 h-12 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
             <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-zinc-800">
@@ -1336,7 +1336,7 @@ function Dashboard() {
       </header>
 
       {showKeys && (
-        <div className="border-b border-zinc-200 bg-white shrink-0 max-h-[50vh] overflow-y-auto">
+        <div className="border-b border-zinc-200 bg-white shrink-0 max-h-[min(40vh,20rem)] overflow-y-auto overflow-x-hidden">
           <div className="px-4 py-3 max-w-3xl mx-auto space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1497,7 +1497,7 @@ function Dashboard() {
       )}
 
       {showConnectors && (
-        <div className="border-b border-zinc-200 px-4 py-3 shrink-0 max-h-[42vh] overflow-y-auto">
+        <div className="border-b border-zinc-200 px-4 py-3 shrink-0 max-h-[min(36vh,18rem)] overflow-y-auto overflow-x-hidden bg-white">
           <div className="max-w-3xl space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -1619,14 +1619,14 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 flex relative">
+      <div className="flex-1 min-h-0 min-w-0 flex relative overflow-hidden">
         {/* —— Left: Agent library (toggle) —— */}
         <aside
-          className={`shrink-0 border-r border-zinc-200 bg-white/90 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
-            libraryOpen ? 'w-[260px]' : 'w-0 border-r-0'
+          className={`shrink-0 border-r border-zinc-200 bg-white flex flex-col transition-[width] duration-200 ease-out overflow-hidden h-full ${
+            libraryOpen ? 'w-[min(260px,40vw)]' : 'w-0 border-r-0'
           }`}
         >
-          <div className="w-[260px] h-full flex flex-col min-h-0">
+          <div className="w-[260px] max-w-full h-full min-h-0 flex flex-col overflow-hidden">
             <div className="px-3 py-3 border-b border-zinc-200 flex items-center justify-between gap-2">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
@@ -1937,7 +1937,7 @@ function Dashboard() {
         )}
 
         {/* —— Center: canvas —— */}
-        <div className="flex-1 min-w-0 min-h-0 relative">
+        <div className="flex-1 min-w-0 min-h-0 relative overflow-hidden">
           <ReactFlowProvider>
             <ReactFlow
               nodes={displayNodes}
@@ -1958,7 +1958,7 @@ function Dashboard() {
               nodeTypes={nodeTypes}
               fitView
               proOptions={{ hideAttribution: true }}
-              className="bg-slate-50"
+              className="bg-slate-50 !absolute inset-0"
               nodesDraggable
               elementsSelectable
             >
@@ -2031,7 +2031,7 @@ function Dashboard() {
 
 
         {/* —— Right rail: inspector body (collapsible) + mesh legend footer (always) —— */}
-        <aside className="w-[300px] shrink-0 border-l border-zinc-200 bg-white flex flex-col min-h-0">
+        <aside className="w-[min(300px,42vw)] max-w-[300px] shrink-0 border-l border-zinc-200 bg-white flex flex-col min-h-0 h-full overflow-hidden">
           <div className="px-3 py-2 border-b border-zinc-200 flex items-center justify-between gap-2 shrink-0">
             <div className="flex rounded-lg border border-zinc-200 p-0.5 text-[11px]">
               <button
@@ -2492,8 +2492,8 @@ function Dashboard() {
             </div>
           )}
 
-          {/* Mesh legend — permanent footer of the inspector rail */}
-          <div className="shrink-0">
+          {/* Mesh legend — permanent footer of the inspector rail (height-capped) */}
+          <div className="shrink-0 min-h-0 max-h-[38%] overflow-hidden border-t border-zinc-200">
             <MeshLegend
               agentCount={agentNodes.length}
               companiesOnMesh={companiesOnMesh}

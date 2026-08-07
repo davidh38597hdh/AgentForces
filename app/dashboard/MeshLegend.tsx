@@ -38,7 +38,7 @@ export function MeshLegend({
   connectHint,
 }: Props) {
   return (
-    <div className="flex flex-col min-h-0 max-h-[42vh] border-t border-zinc-200 bg-white text-zinc-800">
+    <div className="flex flex-col h-full min-h-0 max-h-full bg-white text-zinc-800 overflow-hidden">
       <div className="px-3 py-2 border-b border-zinc-100 flex items-center justify-between gap-2 shrink-0 bg-zinc-50">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
           Mesh legend
@@ -48,7 +48,7 @@ export function MeshLegend({
         </span>
       </div>
 
-      <div className="overflow-y-auto min-h-0 flex-1">
+      <div className="overflow-y-auto overflow-x-hidden min-h-0 flex-1 overscroll-contain">
         {/* Companies focus + layout */}
         <div className="px-3 py-2 border-b border-zinc-100">
           <div className="flex items-center justify-between gap-2 mb-1.5">

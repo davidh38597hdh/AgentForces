@@ -66,7 +66,13 @@ body {
 .af-app {
   background: var(--shell-bg);
   color: var(--shell-text);
-  min-height: 100vh;
+}
+
+/* Full-viewport app pages (dashboard) pin to the window */
+.af-app.h-dvh,
+.af-app.max-h-dvh {
+  min-height: 0;
+  overflow: hidden;
 }
 .af-app-header {
   background: var(--shell-panel);
