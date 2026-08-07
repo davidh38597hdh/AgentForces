@@ -42,6 +42,15 @@ type Provider = 'xai' | 'openai' | 'anthropic';
 type KeyProvider = Provider | null;
 type UserKeys = Partial<Record<Provider, string>>;
 
+/** File attached to a mesh run (text extracted client-side) */
+type RunAttachment = {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  text: string;
+};
+
 /** Global BYOK entry — starts provider-agnostic until the user binds one */
 type GlobalApiKey = {
   id: string;
@@ -501,6 +510,8 @@ function Dashboard() {
   const [task, setTask] = useState('');
   const [context, setContext] = useState('');
   const [urls, setUrls] = useState('');
+  const [attachments, setAttachments] = useState<RunAttachment[]>([]);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
   /** Global API keys — empty by default; entries start provider-agnostic */
   const [globalKeys, setGlobalKeys] = useState<GlobalApiKey[]>([]);
   const [showKeys, setShowKeys] = useState(false);
@@ -1170,6 +1181,109 @@ function Dashboard() {
     setSelectedId(null);
   };
 
+  const MAX_ATTACHMENTS = 12;
+  const MAX_ATTACHMENT_BYTES = 1_500_000; // ~1.5MB per file (text extract)
+  const MAX_ATTACHMENT_CHARS = 20_000;
+
+  const readFileAsAttachment = (file: File): Promise<RunAttachment | null> =>
+    new Promise((resolve) => {
+      if (file.size > MAX_ATTACHMENT_BYTES) {
+        setError(`“${file.name}” is too large (max ~1.5MB for text extract).`);
+        resolve(null);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        let text = '';
+        const result = reader.result;
+        if (typeof result === 'string') {
+          // data URL or plain text
+          if (result.startsWith('data:')) {
+            const comma = result.indexOf(',');
+            const meta = result.slice(0, comma);
+            const data = result.slice(comma + 1);
+            if (meta.includes(';base64')) {
+              try {
+                text = atob(data);
+                // Prefer UTF-8 decode when possible
+                try {
+                  text = new TextDecoder('utf-8', { fatal: false }).decode(
+                    Uint8Array.from(text, (c) => c.charCodeAt(0))
+                  );
+                } catch {
+                  /* keep latin1-ish */
+                }
+              } catch {
+                text = `[Binary file: ${file.name} — could not decode as text]`;
+              }
+            } else {
+              text = decodeURIComponent(data);
+            }
+          } else {
+            text = result;
+          }
+        }
+        // Strip nulls / non-printable for model safety
+        const cleaned = text
+          .replace(/\0/g, '')
+          .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+          .slice(0, MAX_ATTACHMENT_CHARS);
+        if (!cleaned.trim()) {
+          resolve({
+            id: `att_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+            name: file.name,
+            mime: file.type || 'application/octet-stream',
+            size: file.size,
+            text: `[File: ${file.name} (${file.type || 'unknown'}) — no extractable text]`,
+          });
+          return;
+        }
+        resolve({
+          id: `att_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+          name: file.name,
+          mime: file.type || 'text/plain',
+          size: file.size,
+          text: cleaned,
+        });
+      };
+      reader.onerror = () => resolve(null);
+      // Read as text when likely text; otherwise data URL for decode attempt
+      if (
+        file.type.startsWith('text/') ||
+        /\.(txt|md|markdown|csv|json|xml|html|htm|log|tsv|yml|yaml|js|ts|tsx|jsx|py|rb|go|rs|java|c|cpp|h|css|scss|sql|sh|env|ini|toml)$/i.test(
+          file.name
+        )
+      ) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsDataURL(file);
+      }
+    });
+
+  const addAttachmentFiles = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (!list.length) return;
+    const room = MAX_ATTACHMENTS - attachments.length;
+    if (room <= 0) {
+      setError(`Maximum ${MAX_ATTACHMENTS} attachments.`);
+      return;
+    }
+    const slice = list.slice(0, room);
+    const next: RunAttachment[] = [];
+    for (const f of slice) {
+      const att = await readFileAsAttachment(f);
+      if (att) next.push(att);
+    }
+    if (next.length) {
+      setAttachments((prev) => [...prev, ...next].slice(0, MAX_ATTACHMENTS));
+      setError('');
+    }
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const run = async () => {
     if (!task.trim()) return;
     setRunning(true);
@@ -1221,6 +1335,11 @@ function Dashboard() {
             .split('\n')
             .map((u) => u.trim())
             .filter((u) => u.startsWith('http')),
+          attachments: attachments.map((a) => ({
+            name: a.name,
+            mime: a.mime,
+            text: a.text,
+          })),
           userKeys: {
             xai: userKeys.xai || undefined,
             openai: userKeys.openai || undefined,
@@ -2331,35 +2450,133 @@ function Dashboard() {
                     placeholder="Task for the mesh (chief routes by keywords: research / calc / write…)"
                     className="w-full bg-white text-sm text-zinc-900 border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:border-violet-400 leading-relaxed"
                   />
-                  <details>
+                  <details open={attachments.length > 0 || undefined}>
                     <summary className="text-[11px] text-zinc-500 cursor-pointer list-none">
-                      + Context & URLs
+                      + Context, URLs & attachments
+                      {attachments.length > 0 ? (
+                        <span className="ml-1.5 text-violet-700 tabular-nums">
+                          ({attachments.length})
+                        </span>
+                      ) : null}
                     </summary>
-                    <div className="mt-2 space-y-2">
-                      <AutoGrowTextarea
-                        value={context}
-                        onChange={(e) => setContext(e.target.value)}
-                        minRows={2}
-                        minHeight={52}
-                        maxHeight={240}
-                        placeholder="Shared notes..."
-                        className="w-full bg-white rounded-lg px-3 py-2 text-xs text-zinc-800 border border-zinc-200 focus:outline-none focus:border-violet-400 leading-relaxed"
-                      />
-                      <AutoGrowTextarea
-                        value={urls}
-                        onChange={(e) => setUrls(e.target.value)}
-                        minRows={2}
-                        minHeight={52}
-                        maxHeight={160}
-                        placeholder="URLs (one per line)"
-                        className="w-full bg-white rounded-lg px-3 py-2 text-xs text-zinc-800 border border-zinc-200 focus:outline-none focus:border-violet-400 font-mono leading-relaxed"
-                      />
+                    <div className="mt-2 space-y-3">
+                      <div>
+                        <p className="text-[10px] font-medium text-zinc-500 mb-1">Context</p>
+                        <AutoGrowTextarea
+                          value={context}
+                          onChange={(e) => setContext(e.target.value)}
+                          minRows={2}
+                          minHeight={52}
+                          maxHeight={240}
+                          placeholder="Shared notes..."
+                          className="w-full bg-white rounded-lg px-3 py-2 text-xs text-zinc-800 border border-zinc-200 focus:outline-none focus:border-violet-400 leading-relaxed"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-medium text-zinc-500 mb-1">URLs</p>
+                        <AutoGrowTextarea
+                          value={urls}
+                          onChange={(e) => setUrls(e.target.value)}
+                          minRows={2}
+                          minHeight={52}
+                          maxHeight={160}
+                          placeholder="URLs (one per line)"
+                          className="w-full bg-white rounded-lg px-3 py-2 text-xs text-zinc-800 border border-zinc-200 focus:outline-none focus:border-violet-400 font-mono leading-relaxed"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <p className="text-[10px] font-medium text-zinc-500">
+                            Attachments{' '}
+                            <span className="font-normal">
+                              · one or many (text extracted for the mesh)
+                            </span>
+                          </p>
+                          <span className="text-[10px] text-zinc-400 tabular-nums">
+                            {attachments.length}/{MAX_ATTACHMENTS}
+                          </span>
+                        </div>
+
+                        {attachments.length > 0 && (
+                          <ul className="space-y-1.5 mb-2">
+                            {attachments.map((a) => (
+                              <li
+                                key={a.id}
+                                className="flex items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-2"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[11px] text-zinc-800 truncate font-medium">
+                                    {a.name}
+                                  </p>
+                                  <p className="text-[10px] text-zinc-500 truncate">
+                                    {a.mime || 'file'} · {(a.size / 1024).toFixed(1)} KB ·{' '}
+                                    {a.text.length.toLocaleString()} chars
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeAttachment(a.id)}
+                                  className="text-[10px] text-zinc-500 hover:text-red-600 shrink-0"
+                                >
+                                  Remove
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        <input
+                          ref={attachmentInputRef}
+                          type="file"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.length) {
+                              void addAttachmentFiles(e.target.files);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                        <div
+                          className="rounded-lg border border-dashed border-zinc-300 bg-white px-3 py-3 text-center hover:border-violet-400 hover:bg-violet-50/40 transition-colors"
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (e.dataTransfer.files?.length) {
+                              void addAttachmentFiles(e.dataTransfer.files);
+                            }
+                          }}
+                        >
+                          <p className="text-[11px] text-zinc-600">
+                            Drop files here, or{' '}
+                            <button
+                              type="button"
+                              onClick={() => attachmentInputRef.current?.click()}
+                              className="text-violet-700 font-medium hover:underline"
+                              disabled={attachments.length >= MAX_ATTACHMENTS}
+                            >
+                              browse
+                            </button>{' '}
+                            to add one or more
+                          </p>
+                          <p className="text-[10px] text-zinc-400 mt-1">
+                            txt, md, csv, json, code, and similar · up to {MAX_ATTACHMENTS} files ·
+                            ~1.5MB each
+                          </p>
+                        </div>
+                      </div>
+
                       <p className="text-[10px] text-zinc-500 leading-relaxed">
                         Outbound actions: header →{' '}
                         <button
                           type="button"
                           onClick={() => setShowConnectors(true)}
-                          className="text-cyan-500/90 hover:underline"
+                          className="text-cyan-700 hover:underline"
                         >
                           Connectors
                         </button>

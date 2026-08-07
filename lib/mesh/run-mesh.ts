@@ -171,12 +171,21 @@ export async function fetchUrlContent(url: string): Promise<string> {
   }
 }
 
+export type MeshAttachment = {
+  name: string;
+  mime?: string;
+  /** Extracted or pasted text content for the model */
+  text: string;
+};
+
 export type MeshRunInput = {
   agents: MeshAgent[];
   edges: MeshEdge[];
   task: string;
   contextText?: string;
   urls?: string[];
+  /** File/text attachments included in shared context */
+  attachments?: MeshAttachment[];
   userKeys?: UserKeyBag;
   userEmail?: string | null;
   /** When true (default), chief keyword-routes primary network first */
@@ -373,6 +382,17 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
     if (orgLine) prompt += `Your mesh context: ${orgLine}\n\n`;
     if (input.contextText?.trim()) prompt += `Shared context:\n${input.contextText.trim()}\n\n`;
     if (urlBlock) prompt += `Fetched web content:\n${urlBlock}\n\n`;
+    if (input.attachments?.length) {
+      const attBlock = input.attachments
+        .slice(0, 12)
+        .map((a, i) => {
+          const body = (a.text || '').trim().slice(0, 12_000);
+          const meta = [a.name, a.mime].filter(Boolean).join(' · ');
+          return `### Attachment ${i + 1}: ${meta || 'untitled'}\n${body || '[empty]'}`;
+        })
+        .join('\n\n');
+      prompt += `Attachments:\n${attBlock}\n\n`;
+    }
     if (upstream) prompt += `Upstream / bus inputs:\n${upstream}\n\n`;
     prompt += `Your role: ${agent.name}.\nProvide your contribution. Be concise and useful.`;
 

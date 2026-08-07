@@ -46,6 +46,15 @@ export async function POST(req: Request) {
     const task: string = body.task || '';
     const contextText: string = body.contextText || '';
     const urls: string[] = body.urls || [];
+    const attachmentsRaw = Array.isArray(body.attachments) ? body.attachments : [];
+    const attachments = attachmentsRaw
+      .slice(0, 12)
+      .map((a: { name?: string; mime?: string; text?: string }) => ({
+        name: String(a?.name || 'attachment').slice(0, 200),
+        mime: a?.mime ? String(a.mime).slice(0, 120) : undefined,
+        text: String(a?.text || '').slice(0, 20_000),
+      }))
+      .filter((a: { text: string }) => a.text.trim().length > 0);
     const userKeys: UserKeyBag = body.userKeys || {};
     const chiefRoute = body.chiefRoute !== false;
 
@@ -75,6 +84,7 @@ export async function POST(req: Request) {
       task,
       contextText,
       urls,
+      attachments,
       userKeys,
       userEmail: session?.user?.email || null,
       chiefRoute,
