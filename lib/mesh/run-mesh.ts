@@ -11,6 +11,13 @@ import {
   type ProviderId,
   type UserKeyBag,
 } from '@/lib/token-router';
+import {
+  buildAiToolsForAgent,
+  MAX_TOOL_CALLS_PER_AGENT,
+  runPostCompleteNotifiers,
+  type ConnectorActionResult,
+  type ConnectorConfig,
+} from '@/lib/connectors';
 import { openChiefSession, publishChiefTask, routeToNetwork } from './chief';
 import { makeEnvelope } from './message-bus';
 import type { MeshEnvelope, MeshSessionMeta } from './protocol';
@@ -26,6 +33,8 @@ export type MeshAgent = {
   /** Logical Orchestrate network id (research | computation | creative | custom) */
   network?: string;
   exposed?: boolean;
+  /** Allowlisted connector ids this agent may use as tools */
+  connectorIds?: string[];
 };
 
 export type MeshEdge = {
@@ -53,6 +62,7 @@ export type AgentRunLog = {
   model: string;
   network: string;
   output: string;
+  connectorActions?: ConnectorActionResult[];
 };
 
 export type MeshRunResult = {
@@ -63,6 +73,7 @@ export type MeshRunResult = {
   busHistory: MeshEnvelope[];
   outcome: string;
   final: string;
+  connectorActions: ConnectorActionResult[];
 };
 
 function networkOf(agent: MeshAgent): string {
@@ -171,6 +182,8 @@ export type MeshRunInput = {
   /** When true (default), chief keyword-routes primary network first */
   chiefRoute?: boolean;
   tenantId?: string;
+  /** BYOK connector configs (Slack, Gmail, webhooks, …) */
+  connectors?: ConnectorConfig[];
 };
 
 export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
@@ -240,6 +253,8 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
 
   const outputs = new Map<string, string>();
   const log: AgentRunLog[] = [];
+  const allConnectorActions: ConnectorActionResult[] = [];
+  const connectors = input.connectors || [];
 
   for (const agent of ordered) {
     const provider = (agent.provider || 'xai') as ProviderId;
@@ -340,6 +355,17 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
     system +=
       '\n\nYou are part of an AgentForces mesh (Orchestrate + AMEP/1 concepts). Prefer structured handoffs when work should move to another network.';
 
+    const agentActions: ConnectorActionResult[] = [];
+    const aiTools = buildAiToolsForAgent(connectors, agent.connectorIds, (r) => {
+      agentActions.push(r);
+      allConnectorActions.push(r);
+    });
+    const hasTools = Object.keys(aiTools).length > 0;
+    if (hasTools) {
+      system +=
+        '\n\nYou have connector tools (Slack, Gmail, webhooks, etc.). Use them when the task requires posting, emailing, or notifying externally. Never claim you sent a message unless you called the tool successfully.';
+    }
+
     let prompt = `Original task:\n${input.task}\n\n`;
     if (primaryNetwork) {
       prompt += `Chief primary route: ${primaryNetwork} (you are on ${agentNet})\n\n`;
@@ -351,7 +377,17 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
     prompt += `Your role: ${agent.name}.\nProvide your contribution. Be concise and useful.`;
 
     const model = await getModel(provider, modelId, input.userKeys, input.userEmail);
-    const result = await generateText({ model, system, prompt });
+    const result = await generateText({
+      model,
+      system,
+      prompt,
+      ...(hasTools
+        ? {
+            tools: aiTools,
+            maxSteps: MAX_TOOL_CALLS_PER_AGENT + 1,
+          }
+        : {}),
+    });
 
     outputs.set(agent.id, result.text);
 
@@ -380,6 +416,7 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
       model: modelId,
       network: agentNet,
       output: result.text,
+      connectorActions: agentActions.length ? agentActions : undefined,
     });
   }
 
@@ -397,6 +434,14 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
     log[log.length - 1]?.output ||
     '';
 
+  // Post-run notifiers (connectors with notifyOnComplete)
+  const notifyActions = await runPostCompleteNotifiers(connectors, {
+    task: input.task,
+    outcome,
+    sessionId: chief.meta.sessionId,
+  });
+  allConnectorActions.push(...notifyActions);
+
   return {
     session: chief.meta,
     primaryNetwork,
@@ -405,5 +450,6 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
     busHistory: chief.bus.history,
     outcome,
     final: log[log.length - 1]?.output || '',
+    connectorActions: allConnectorActions,
   };
 }

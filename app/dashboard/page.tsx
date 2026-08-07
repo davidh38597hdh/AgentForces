@@ -22,6 +22,12 @@ import {
 import AgentNode, { type AgentNodeData } from './AgentNode';
 import { buildProjectSeed } from '@/lib/seed-graph';
 import { Logo } from '@/components/Logo';
+import {
+  CONNECTOR_TYPE_META,
+  type ConnectorConfig,
+  type ConnectorType,
+  type ConnectorActionResult,
+} from '@/lib/connectors/types';
 
 type Provider = 'xai' | 'openai' | 'anthropic';
 type UserKeys = Partial<Record<Provider, string>>;
@@ -32,6 +38,7 @@ type LogEntry = {
   model: string;
   output: string;
   network?: string;
+  connectorActions?: ConnectorActionResult[];
 };
 type HopEntry = {
   messageId: string;
@@ -56,6 +63,13 @@ type SecurityMeta = {
 };
 
 const KEYS_STORAGE = 'agentforces_user_keys_v1';
+const CONNECTORS_STORAGE = 'agentforces_connectors_v1';
+
+const CONNECTOR_TYPES = Object.keys(CONNECTOR_TYPE_META) as ConnectorType[];
+
+function newConnectorId(): string {
+  return `conn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+}
 
 const COMPANIES = [
   { id: 'acme', name: 'Acme Corp', color: '#3b82f6' },
@@ -235,15 +249,19 @@ function Dashboard() {
   const [urls, setUrls] = useState('');
   const [userKeys, setUserKeys] = useState<UserKeys>({});
   const [showKeys, setShowKeys] = useState(false);
-  const [slackWebhook, setSlackWebhook] = useState('');
-  const [genericWebhook, setGenericWebhook] = useState('');
-  const [postOutcomeToSlack, setPostOutcomeToSlack] = useState(false);
+  const [connectors, setConnectors] = useState<ConnectorConfig[]>([]);
+  const [showConnectors, setShowConnectors] = useState(false);
+  const [newConnectorType, setNewConnectorType] = useState<ConnectorType>('slack_webhook');
+  const [newConnectorName, setNewConnectorName] = useState('');
+  const [newConnectorFields, setNewConnectorFields] = useState<Record<string, string>>({});
+  const [newNotifyOnComplete, setNewNotifyOnComplete] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [hops, setHops] = useState<HopEntry[]>([]);
   const [meshSession, setMeshSession] = useState<SessionMeta | null>(null);
   const [securityMeta, setSecurityMeta] = useState<SecurityMeta | null>(null);
   const [primaryNetwork, setPrimaryNetwork] = useState<string | null>(null);
   const [outcome, setOutcome] = useState('');
+  const [connectorActions, setConnectorActions] = useState<ConnectorActionResult[]>([]);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
   const [connectHint, setConnectHint] = useState('');
@@ -258,7 +276,95 @@ function Dashboard() {
       const raw = localStorage.getItem(KEYS_STORAGE);
       if (raw) setUserKeys(JSON.parse(raw));
     } catch {}
+    try {
+      const raw = localStorage.getItem(CONNECTORS_STORAGE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ConnectorConfig[];
+        if (Array.isArray(parsed)) setConnectors(parsed);
+      }
+    } catch {}
   }, []);
+
+  const persistConnectors = useCallback((next: ConnectorConfig[]) => {
+    setConnectors(next);
+    try {
+      localStorage.setItem(CONNECTORS_STORAGE, JSON.stringify(next));
+    } catch {}
+  }, []);
+
+  const addConnector = () => {
+    const meta = CONNECTOR_TYPE_META[newConnectorType];
+    const name =
+      newConnectorName.trim() ||
+      `${meta.label} ${connectors.filter((c) => c.type === newConnectorType).length + 1}`;
+    const config: Record<string, string> = {};
+    for (const f of meta.fields) {
+      const v = (newConnectorFields[f.key] || '').trim();
+      if (v) config[f.key] = v;
+    }
+    // Require at least one secret/primary field
+    const primary = meta.fields[0];
+    if (!config[primary.key]) {
+      setError(`Connector needs ${primary.label}`);
+      return;
+    }
+    const entry: ConnectorConfig = {
+      id: newConnectorId(),
+      type: newConnectorType,
+      name,
+      config,
+      notifyOnComplete: newNotifyOnComplete,
+    };
+    persistConnectors([...connectors, entry]);
+    setNewConnectorName('');
+    setNewConnectorFields({});
+    setNewNotifyOnComplete(false);
+    setError('');
+  };
+
+  const removeConnector = (id: string) => {
+    persistConnectors(connectors.filter((c) => c.id !== id));
+    // Drop allowlist refs from agents
+    setNodes((nds) =>
+      nds.map((n) => {
+        const d = n.data as AgentNodeData;
+        if (!d.connectorIds?.includes(id)) return n;
+        return {
+          ...n,
+          data: {
+            ...d,
+            connectorIds: d.connectorIds.filter((x) => x !== id),
+          },
+        };
+      })
+    );
+  };
+
+  const toggleConnectorNotify = (id: string) => {
+    persistConnectors(
+      connectors.map((c) =>
+        c.id === id ? { ...c, notifyOnComplete: !c.notifyOnComplete } : c
+      )
+    );
+  };
+
+  const toggleAgentConnector = (connectorId: string) => {
+    if (!selectedId) return;
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (n.id !== selectedId) return n;
+        const d = n.data as AgentNodeData;
+        const cur = d.connectorIds || [];
+        const next = cur.includes(connectorId)
+          ? cur.filter((x) => x !== connectorId)
+          : [...cur, connectorId];
+        return {
+          ...n,
+          data: { ...d, connectorIds: next.length ? next : undefined },
+        };
+      })
+    );
+  };
 
   // Open right inspector when an agent is selected
   useEffect(() => {
@@ -448,6 +554,7 @@ function Dashboard() {
     setSecurityMeta(null);
     setPrimaryNetwork(null);
     setOutcome('');
+    setConnectorActions([]);
     try {
       const agents = nodes.map((n) => {
         const d = n.data as AgentNodeData;
@@ -461,6 +568,7 @@ function Dashboard() {
           team: d.team,
           network: d.network,
           exposed: d.exposed,
+          connectorIds: d.connectorIds,
         };
       });
 
@@ -492,10 +600,7 @@ function Dashboard() {
             openai: userKeys.openai || undefined,
             anthropic: userKeys.anthropic || undefined,
           },
-          connectors: {
-            slackWebhook: postOutcomeToSlack ? slackWebhook.trim() : '',
-            genericWebhook: genericWebhook.trim(),
-          },
+          connectors,
         }),
       });
       const data = await res.json();
@@ -506,6 +611,7 @@ function Dashboard() {
       setSecurityMeta(data.security || null);
       setPrimaryNetwork(data.primaryNetwork || null);
       setOutcome(data.outcome || data.final || '');
+      setConnectorActions(data.connectorActions || []);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Run failed';
       if (msg.includes('401') || msg.toLowerCase().includes('authentication')) {
@@ -540,6 +646,16 @@ function Dashboard() {
             <button type="button" onClick={() => setShowKeys((s) => !s)} className="hover:text-zinc-300">
               API keys
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowConnectors((s) => !s);
+                setShowKeys(false);
+              }}
+              className="hover:text-zinc-300"
+            >
+              Connectors{connectors.length > 0 ? ` (${connectors.length})` : ''}
+            </button>
             {session?.user?.email ? (
               <>
                 <span className="text-zinc-600 hidden md:inline">{session.user.email}</span>
@@ -567,6 +683,129 @@ function Dashboard() {
                 className="h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm focus:outline-none"
               />
             ))}
+          </div>
+        </div>
+      )}
+
+      {showConnectors && (
+        <div className="border-b border-zinc-900 px-4 py-3 shrink-0 max-h-[42vh] overflow-y-auto">
+          <div className="max-w-3xl space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  Connectors
+                </p>
+                <p className="text-[10px] text-zinc-600">
+                  BYOK Slack / Gmail / webhooks · stored only in this browser · assign per agent
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowConnectors(false)}
+                className="text-[11px] text-zinc-500 hover:text-zinc-300"
+              >
+                Close
+              </button>
+            </div>
+
+            {connectors.length > 0 && (
+              <ul className="space-y-2">
+                {connectors.map((c) => (
+                  <li
+                    key={c.id}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-zinc-200 truncate">{c.name}</p>
+                      <p className="text-[10px] text-zinc-600">
+                        {CONNECTOR_TYPE_META[c.type].label}
+                        {c.notifyOnComplete ? ' · notify on complete' : ''}
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                      <input
+                        type="checkbox"
+                        checked={!!c.notifyOnComplete}
+                        onChange={() => toggleConnectorNotify(c.id)}
+                      />
+                      Auto-notify
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeConnector(c.id)}
+                      className="text-[10px] text-zinc-600 hover:text-red-400"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="rounded-lg border border-zinc-800 bg-black/40 p-3 space-y-2">
+              <p className="text-[10px] uppercase tracking-wider text-zinc-500">Add connector</p>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <select
+                  value={newConnectorType}
+                  onChange={(e) => {
+                    setNewConnectorType(e.target.value as ConnectorType);
+                    setNewConnectorFields({});
+                  }}
+                  className="h-9 px-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs"
+                >
+                  {CONNECTOR_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {CONNECTOR_TYPE_META[t].label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={newConnectorName}
+                  onChange={(e) => setNewConnectorName(e.target.value)}
+                  placeholder="Display name (optional)"
+                  className="h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none"
+                />
+              </div>
+              {CONNECTOR_TYPE_META[newConnectorType].fields.map((f) => (
+                <input
+                  key={f.key}
+                  type={f.secret ? 'password' : 'text'}
+                  value={newConnectorFields[f.key] || ''}
+                  onChange={(e) =>
+                    setNewConnectorFields((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  }
+                  placeholder={f.placeholder || f.label}
+                  className="w-full h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none"
+                />
+              ))}
+              <label className="flex items-center gap-2 text-[11px] text-zinc-500">
+                <input
+                  type="checkbox"
+                  checked={newNotifyOnComplete}
+                  onChange={(e) => setNewNotifyOnComplete(e.target.checked)}
+                />
+                Notify with mesh outcome when run completes
+              </label>
+              <button
+                type="button"
+                onClick={addConnector}
+                className="h-9 px-3 rounded-lg bg-white text-black text-xs font-medium"
+              >
+                Save connector
+              </button>
+              <p className="text-[10px] text-zinc-600 leading-relaxed">
+                Gmail needs an{' '}
+                <a
+                  href="https://myaccount.google.com/apppasswords"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-violet-400/90 hover:underline"
+                >
+                  app password
+                </a>
+                . Slack: Incoming Webhook URL or bot token (xoxb-…). Webhooks must be https.
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -962,6 +1201,48 @@ function Dashboard() {
                         rows={6}
                         className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none text-zinc-400"
                       />
+                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                        Connector tools
+                      </label>
+                      {connectors.length === 0 ? (
+                        <p className="text-[11px] text-zinc-600 leading-relaxed">
+                          No connectors yet.{' '}
+                          <button
+                            type="button"
+                            onClick={() => setShowConnectors(true)}
+                            className="text-cyan-500/90 hover:underline"
+                          >
+                            Add Slack, Gmail, or webhooks
+                          </button>{' '}
+                          then allowlist them here so this agent can call them mid-run.
+                        </p>
+                      ) : (
+                        <ul className="space-y-1.5">
+                          {connectors.map((c) => {
+                            const checked = (
+                              (selected.data as AgentNodeData).connectorIds || []
+                            ).includes(c.id);
+                            return (
+                              <li key={c.id}>
+                                <label className="flex items-start gap-2 text-[11px] text-zinc-400 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    className="mt-0.5"
+                                    checked={checked}
+                                    onChange={() => toggleAgentConnector(c.id)}
+                                  />
+                                  <span>
+                                    <span className="text-zinc-200">{c.name}</span>
+                                    <span className="block text-[10px] text-zinc-600">
+                                      {CONNECTOR_TYPE_META[c.type].label}
+                                    </span>
+                                  </span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
                     </>
                   )}
                 </div>
@@ -978,7 +1259,7 @@ function Dashboard() {
                   />
                   <details>
                     <summary className="text-[11px] text-zinc-600 cursor-pointer list-none">
-                      + Context & connectors
+                      + Context & URLs
                     </summary>
                     <div className="mt-2 space-y-2">
                       <textarea
@@ -995,26 +1276,18 @@ function Dashboard() {
                         placeholder="URLs"
                         className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
                       />
-                      <label className="flex items-center gap-2 text-[11px] text-zinc-500">
-                        <input
-                          type="checkbox"
-                          checked={postOutcomeToSlack}
-                          onChange={(e) => setPostOutcomeToSlack(e.target.checked)}
-                        />
-                        Slack outcome
-                      </label>
-                      <input
-                        value={slackWebhook}
-                        onChange={(e) => setSlackWebhook(e.target.value)}
-                        placeholder="Slack webhook"
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
-                      />
-                      <input
-                        value={genericWebhook}
-                        onChange={(e) => setGenericWebhook(e.target.value)}
-                        placeholder="Zapier webhook"
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
-                      />
+                      <p className="text-[10px] text-zinc-600 leading-relaxed">
+                        Outbound actions: header →{' '}
+                        <button
+                          type="button"
+                          onClick={() => setShowConnectors(true)}
+                          className="text-cyan-500/90 hover:underline"
+                        >
+                          Connectors
+                        </button>
+                        , then assign per agent under Configure. Connectors with “auto-notify”
+                        fire after the run.
+                      </p>
                     </div>
                   </details>
 
@@ -1092,6 +1365,28 @@ function Dashboard() {
                             Outcome
                           </h3>
                           <p className="text-xs text-zinc-300 whitespace-pre-wrap">{outcome}</p>
+                        </div>
+                      )}
+                      {connectorActions.length > 0 && (
+                        <div>
+                          <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                            Connector actions
+                          </h3>
+                          <ul className="space-y-1.5">
+                            {connectorActions.map((a, i) => (
+                              <li
+                                key={`${a.connectorId}-${a.action}-${i}`}
+                                className="text-[10px] border-l-2 pl-2 border-zinc-800"
+                              >
+                                <span className={a.ok ? 'text-emerald-500/90' : 'text-red-400'}>
+                                  {a.ok ? 'ok' : 'fail'}
+                                </span>{' '}
+                                <span className="text-zinc-400">{a.connectorName}</span>{' '}
+                                <span className="text-zinc-600">{a.action}</span>
+                                <span className="block text-zinc-600">{a.detail}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       )}
                       {log.map((entry, i) => (

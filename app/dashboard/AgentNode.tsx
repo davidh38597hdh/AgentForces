@@ -16,6 +16,8 @@ export type AgentNodeData = {
   exposed: boolean;
   /** Orchestrate network id (research | computation | creative | …) */
   network?: string;
+  /** Allowlisted connector ids this agent may invoke as tools */
+  connectorIds?: string[];
 };
 
 function AgentNodeComponent({ data, selected }: NodeProps) {
@@ -51,6 +53,11 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
         </p>
         {d.network && (
           <p className="text-[10px] text-indigo-400/90 truncate">net:{d.network}</p>
+        )}
+        {d.connectorIds && d.connectorIds.length > 0 && (
+          <p className="text-[10px] text-cyan-500/80 truncate">
+            {d.connectorIds.length} connector{d.connectorIds.length === 1 ? '' : 's'}
+          </p>
         )}
         <p className="text-[10px] text-zinc-600 truncate">
           {d.provider} · {d.model}

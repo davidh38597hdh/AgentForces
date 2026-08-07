@@ -38,8 +38,9 @@ LangGraph programs control flow. CrewAI staffs a crew. **AgentForces fields a fo
 2. **Boundaries by design** — multi-company / multi-network; Ext-only cross edges.  
 3. **Chief + networks** — research · computation · creative; keyword chief routing.  
 4. **Your keys** — BYOK multi-provider (xAI, OpenAI, Anthropic) per node.  
-5. **Mesh protocol path** — AMEP/1 identity today; sealed hops as differentiator tomorrow.  
-6. **Operator UX** — agent library, inspector, hop logs, session meta — not a notebook.
+5. **Connectors** — Gmail send, Slack, webhooks as agent tools + post-run notify (BYOK).  
+6. **Mesh protocol path** — AMEP/1 identity today; sealed hops as differentiator tomorrow.  
+7. **Operator UX** — agent library, inspector, hop logs, session meta — not a notebook.
 
 ---
 

@@ -16,6 +16,7 @@
 | **Session cookies** | Production: `__Secure-…`, `httpOnly`, `secure`, `sameSite=lax` |
 | **Security headers** | HSTS, nosniff, DENY frame, Referrer-Policy, Permissions-Policy, CSP baseline |
 | **API keys** | Never logged; errors redacted; BYOK stays in browser until request |
+| **Connectors** | BYOK localStorage; https-only webhooks + SSRF host blocklist; secrets redacted in errors/logs |
 | **Debug endpoints** | `/api/auth/providers-status` requires session in production |
 
 Landing page (`/`) remains public marketing.

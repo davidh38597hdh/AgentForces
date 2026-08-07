@@ -3,7 +3,8 @@
 **Force, not framework.** Private multi-agent **mesh product** for business outcomes.  
 **Live:** https://www.agentxforces.com · **Repo:** https://github.com/davidh38597hdh/AgentForces  
 **Positioning:** [docs/POSITIONING.md](docs/POSITIONING.md) (vs LangGraph / CrewAI)  
-**Security:** [docs/SECURITY.md](docs/SECURITY.md)
+**Security:** [docs/SECURITY.md](docs/SECURITY.md)  
+**Connectors:** [docs/CONNECTORS.md](docs/CONNECTORS.md) (Gmail, Slack, webhooks)
 
 Standing playbook for agents in this tree. Prefer it over ad-hoc assumptions.
 
@@ -47,7 +48,8 @@ npm run build    # must pass before claiming a change done
 | Seeds | `lib/seed-graph.ts` | `buildProjectSeed(seed)` → `{ nodes, edges, task }` |
 | Dashboard | `app/dashboard/page.tsx`, `AgentNode.tsx` | React Flow; reads `?project=` via `useSearchParams` + Suspense |
 | Mesh core | `lib/mesh/*` | AMEP/1 labels, MessageBus, chief route, networks, `runMesh` |
-| Orchestrate API | `app/api/orchestrate/route.ts` | Calls `runMesh` (topo + bus hops + external briefs) |
+| Connectors | `lib/connectors/*` | Gmail SMTP, Slack webhook/bot, HTTP webhook; per-agent tools + post-run notify |
+| Orchestrate API | `app/api/orchestrate/route.ts` | Calls `runMesh` (topo + bus hops + connector tools + notifiers) |
 | Token router | `lib/token-router.ts` | control plane → user BYOK → env |
 | Deploy helpers | `lib/deploy.ts` | Vercel vs Docker/Fly detection; production URL default agentxforces.com |
 | Health | `app/api/health/route.ts` | Liveness for secondary hosts |
@@ -78,6 +80,7 @@ Do not treat Streamlit Orchestrate / Python `amep-network` as this repo’s depl
 - Dark zinc palette (`#0a0a0a` background). Title **AgentForces** prominent but understated.
 - Client components start with `'use client'`.
 - BYOK keys in `localStorage` key `agentforces_user_keys_v1` only — never log or commit them.
+- Connector secrets in `localStorage` key `agentforces_connectors_v1` (BYOK) — never log or commit them.
 - No loud marketing on the landing page.
 - Default CTAs: **Open portal** / **Mesh canvas** (not Google) until auth ships.
 

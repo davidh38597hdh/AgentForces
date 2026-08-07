@@ -1,6 +1,10 @@
 import { runMesh, type MeshAgent, type MeshEdge } from '@/lib/mesh';
 import type { UserKeyBag } from '@/lib/token-router';
 import { requireSession } from '@/lib/require-session';
+import {
+  migrateLegacyConnectorFields,
+  sanitizeConnectors,
+} from '@/lib/connectors';
 
 export const maxDuration = 120;
 
@@ -9,7 +13,9 @@ function sanitizeError(message: string): string {
   return message
     .replace(/sk-[a-zA-Z0-9_-]+/g, '[redacted]')
     .replace(/xai-[a-zA-Z0-9_-]+/gi, '[redacted]')
-    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]');
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+    .replace(/xoxb-[a-zA-Z0-9-]+/g, 'xoxb-[redacted]')
+    .replace(/hooks\.slack\.com\/services\/\S+/gi, 'hooks.slack.com/services/[redacted]');
 }
 
 export async function POST(req: Request) {
@@ -19,14 +25,45 @@ export async function POST(req: Request) {
     const session = gate.session;
 
     const body = await req.json();
-    const agents: MeshAgent[] = (body.agents || []).slice(0, 12);
+    const agentsRaw = (body.agents || []).slice(0, 12);
+    const agents: MeshAgent[] = agentsRaw.map(
+      (a: MeshAgent & { connectorIds?: unknown }) => ({
+        id: String(a.id || ''),
+        name: String(a.name || 'Agent'),
+        system: String(a.system || ''),
+        provider: a.provider,
+        model: a.model,
+        company: a.company,
+        team: a.team,
+        network: a.network,
+        exposed: Boolean(a.exposed),
+        connectorIds: Array.isArray(a.connectorIds)
+          ? a.connectorIds.map(String).slice(0, 20)
+          : undefined,
+      })
+    );
     const edges: MeshEdge[] = body.edges || [];
     const task: string = body.task || '';
     const contextText: string = body.contextText || '';
     const urls: string[] = body.urls || [];
-    const connectors = body.connectors || {};
     const userKeys: UserKeyBag = body.userKeys || {};
     const chiefRoute = body.chiefRoute !== false;
+
+    // New: connectors[] array; legacy: connectors.slackWebhook / genericWebhook object
+    let connectors = sanitizeConnectors(body.connectors);
+    if (!connectors.length && body.connectors && !Array.isArray(body.connectors)) {
+      connectors = migrateLegacyConnectorFields({
+        slackWebhook: body.connectors.slackWebhook,
+        genericWebhook: body.connectors.genericWebhook,
+      });
+    }
+    // Also accept top-level legacy fields if still sent alone
+    if (!connectors.length && (body.slackWebhook || body.genericWebhook)) {
+      connectors = migrateLegacyConnectorFields({
+        slackWebhook: body.slackWebhook,
+        genericWebhook: body.genericWebhook,
+      });
+    }
 
     if (!agents.length || !task.trim()) {
       return Response.json({ error: 'Agents and task are required' }, { status: 400 });
@@ -42,55 +79,22 @@ export async function POST(req: Request) {
       userEmail: session?.user?.email || null,
       chiefRoute,
       tenantId: session?.user?.email || 'tenant-default',
+      connectors,
     });
 
     // Drop any chance of keys lingering on the body reference
     void userKeys;
-
-    const outcome = result.outcome;
-
-    if (connectors.slackWebhook) {
-      try {
-        await fetch(connectors.slackWebhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: `*AgentForces mesh outcome* (${result.session.protocol})\n\n${outcome.slice(0, 3500)}`,
-          }),
-        });
-      } catch {
-        /* ignore */
-      }
-    }
-    if (connectors.genericWebhook) {
-      try {
-        await fetch(connectors.genericWebhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            task,
-            outcome,
-            log: result.log,
-            hops: result.hops,
-            session: result.session,
-            primaryNetwork: result.primaryNetwork,
-            userEmail: session?.user?.email || null,
-            ts: new Date().toISOString(),
-          }),
-        });
-      } catch {
-        /* ignore */
-      }
-    }
+    void connectors;
 
     return Response.json({
       log: result.log,
       hops: result.hops,
       session: result.session,
       primaryNetwork: result.primaryNetwork,
-      outcome,
+      outcome: result.outcome,
       final: result.final,
       busMessageCount: result.busHistory.length,
+      connectorActions: result.connectorActions,
       security: {
         meshTransport: result.session.transport,
         sealedHops: false,
