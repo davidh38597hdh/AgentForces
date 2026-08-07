@@ -10,8 +10,8 @@ export default function Home() {
             <Link href="/login" className="text-xs text-zinc-500 hover:text-zinc-300">
               Sign in
             </Link>
-            <Link href="/dashboard" className="text-xs text-zinc-500 hover:text-zinc-300">
-              Open →
+            <Link href="/portal" className="text-xs text-zinc-500 hover:text-zinc-300">
+              Portal →
             </Link>
           </div>
         </div>
@@ -25,20 +25,20 @@ export default function Home() {
           Multi-agent graphs — your keys, your models
         </p>
         <p className="text-zinc-600 mb-12 max-w-md leading-relaxed text-sm">
-          Connect agent nodes across teams and companies. Bring your own API keys. Run outcomes.
+          Sign in with Google, pick a project in the portal, then open your mesh.
         </p>
         <div className="flex gap-3">
           <Link
-            href="/dashboard"
+            href="/login"
             className="inline-flex h-10 items-center px-5 rounded-lg bg-white text-black text-sm font-medium"
           >
-            Open dashboard
+            Continue with Google
           </Link>
           <Link
-            href="/login"
+            href="/portal"
             className="inline-flex h-10 items-center px-5 rounded-lg border border-zinc-800 text-sm text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
           >
-            Sign in
+            Portal
           </Link>
         </div>
       </main>
