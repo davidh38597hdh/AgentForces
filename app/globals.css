@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import '@xyflow/react/dist/style.css';
+
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
@@ -11,4 +13,26 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* React Flow dark theme */
+.react-flow__background pattern {
+  color: #27272a;
+}
+.react-flow__minimap {
+  background: #18181b !important;
+}
+.react-flow__controls-button {
+  background: #18181b !important;
+  border-bottom: 1px solid #27272a !important;
+  fill: #a1a1aa !important;
+}
+.react-flow__controls-button:hover {
+  background: #27272a !important;
+}
+.react-flow__edge-path {
+  stroke: #52525b;
+}
+.react-flow__connection-path {
+  stroke: #3b82f6;
 }
