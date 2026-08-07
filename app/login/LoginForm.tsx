@@ -30,13 +30,21 @@ export function LoginForm({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 flex items-center justify-center px-5">
-      <div className="w-full max-w-sm">
-        <Link href="/" className="text-sm font-medium text-zinc-300 hover:text-white">
+    <div className="min-h-screen af-page-bg text-[var(--foreground)] flex items-center justify-center px-5 relative overflow-hidden">
+      <div
+        className="pointer-events-none absolute top-0 right-0 h-64 w-64 rounded-full blur-3xl opacity-40"
+        style={{ background: 'radial-gradient(circle, #22d3ee 0%, transparent 70%)' }}
+        aria-hidden
+      />
+      <div className="w-full max-w-sm af-card rounded-2xl px-6 py-8 relative z-10">
+        <Link
+          href="/"
+          className="text-sm font-semibold text-[var(--purple-light)] hover:text-[var(--cyan-soft)] transition-colors"
+        >
           AgentForces
         </Link>
-        <h1 className="mt-10 text-2xl font-medium tracking-tight text-white">Sign in</h1>
-        <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
+        <h1 className="mt-8 text-2xl font-semibold tracking-tight af-title-gradient">Sign in</h1>
+        <p className="mt-2 text-sm text-[var(--muted)] leading-relaxed">
           {googleEnabled
             ? 'Continue with Google to open your portal and mesh projects.'
             : 'Google is not configured on this deployment. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and AUTH_SECRET on Vercel.'}
@@ -47,9 +55,9 @@ export function LoginForm({
             type="button"
             onClick={onGoogle}
             disabled={pending}
-            className="mt-10 w-full h-11 rounded-lg bg-zinc-100 text-zinc-900 text-sm font-medium hover:bg-white transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+            className="af-btn-primary w-full mt-10 disabled:opacity-60"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" aria-hidden>
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -74,9 +82,7 @@ export function LoginForm({
         {!authRequired && (
           <Link
             href={safeCallback}
-            className={`w-full h-11 rounded-lg border border-zinc-600 text-sm text-zinc-200 hover:text-white hover:border-zinc-400 transition-colors flex items-center justify-center ${
-              googleEnabled ? 'mt-3' : 'mt-10'
-            }`}
+            className={`af-btn-ghost w-full ${googleEnabled ? 'mt-3' : 'mt-10'}`}
           >
             Continue as guest
           </Link>
@@ -84,9 +90,9 @@ export function LoginForm({
 
         {error && <p className="mt-4 text-xs text-red-400">{error}</p>}
 
-        <p className="mt-8 text-[11px] text-zinc-500 leading-relaxed">
-          Redirect URI (Google Console):{' '}
-          <code className="text-zinc-400">
+        <p className="mt-8 text-[11px] text-[var(--purple-soft)] leading-relaxed opacity-80">
+          Redirect URI:{' '}
+          <code className="text-[var(--cyan-soft)]">
             https://agentxforces.com/api/auth/callback/google
           </code>
         </p>
