@@ -42,14 +42,15 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl mx-auto px-5 pt-24 sm:pt-32 pb-16 w-full relative z-10">
+      <main className="flex-1 max-w-3xl mx-auto px-5 pt-20 sm:pt-28 pb-16 w-full relative z-10">
+        <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight af-title-gradient mb-6 sm:mb-8">
+          AgentForces
+        </h1>
+
         <div className="af-card rounded-3xl px-6 sm:px-10 py-10 sm:py-12">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500 mb-5">
             Multi-agent mesh
           </p>
-          <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight af-title-gradient mb-6">
-            AgentForces
-          </h1>
           <p className="text-lg text-zinc-300 mb-4 max-w-lg leading-relaxed">
             Multi-network agent meshes — chief routing, inter-network bus, your keys
           </p>
