@@ -16,6 +16,7 @@ type Props = {
   selectedName?: string | null;
   selectedCompany?: string;
   onAssignCompany: (company: LegendCompany | null) => void;
+  onArrangeByCompany?: () => void;
   connectHint?: string;
 };
 
@@ -33,6 +34,7 @@ export function MeshLegend({
   selectedName,
   selectedCompany,
   onAssignCompany,
+  onArrangeByCompany,
   connectHint,
 }: Props) {
   return (
@@ -47,11 +49,23 @@ export function MeshLegend({
       </div>
 
       <div className="overflow-y-auto min-h-0 flex-1">
-        {/* Companies focus */}
+        {/* Companies focus + layout */}
         <div className="px-3 py-2 border-b border-zinc-100">
-          <p className="text-[10px] font-medium text-zinc-500 mb-1.5">
-            Companies <span className="font-normal">· click to focus</span>
-          </p>
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <p className="text-[10px] font-medium text-zinc-500">
+              Companies <span className="font-normal">· click to focus</span>
+            </p>
+            {onArrangeByCompany && (
+              <button
+                type="button"
+                onClick={onArrangeByCompany}
+                className="text-[10px] px-2 py-1 rounded-md border border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100 shrink-0"
+                title="Layout agents into company columns"
+              >
+                Arrange by company
+              </button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1">
             <button
               type="button"

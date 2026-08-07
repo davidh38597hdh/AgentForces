@@ -1986,17 +1986,9 @@ function Dashboard() {
                 <div className="flex flex-wrap items-center justify-center gap-1 rounded-lg border border-zinc-200 bg-white/95 p-1 backdrop-blur">
                   <button
                     type="button"
-                    onClick={arrangeByCompany}
-                    className="text-[11px] px-2 py-1 rounded-md text-cyan-400/90 hover:text-cyan-300"
-                    title="Layout agents into company columns"
-                  >
-                    Arrange by company
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setShowCompanyLanes((v) => !v)}
                     className={`text-[11px] px-2 py-1 rounded-md border border-zinc-200 ${
-                      showCompanyLanes ? 'text-violet-300' : 'text-zinc-500 hover:text-zinc-700'
+                      showCompanyLanes ? 'text-violet-700' : 'text-zinc-500 hover:text-zinc-700'
                     }`}
                   >
                     {showCompanyLanes ? 'Lanes on' : 'Lanes off'}
@@ -2004,7 +1996,7 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={seedTwoCompanies}
-                    className="text-[11px] px-2 py-1 rounded-md text-amber-500/90 hover:text-amber-400"
+                    className="text-[11px] px-2 py-1 rounded-md text-amber-700 hover:text-amber-800"
                   >
                     Demo: 2 orgs
                   </button>
@@ -2018,7 +2010,7 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setLibraryOpen((o) => !o)}
-                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-200"
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-600 hover:text-violet-700 border border-zinc-200"
                   >
                     {libraryOpen ? 'Hide library' : 'Library'}
                   </button>
@@ -2515,6 +2507,7 @@ function Dashboard() {
                 selected ? (selected.data as AgentNodeData).company : undefined
               }
               onAssignCompany={assignSelectedToCompany}
+              onArrangeByCompany={arrangeByCompany}
               connectHint={connectHint}
             />
           </div>
