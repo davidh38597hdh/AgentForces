@@ -1667,8 +1667,8 @@ function Dashboard() {
                       onClick={() => setLibraryTab(tab.id)}
                       className={`flex-1 px-1.5 py-1.5 rounded-md text-[10px] font-medium transition-colors ${
                         active
-                          ? 'bg-zinc-800 text-zinc-900'
-                          : 'text-zinc-500 hover:text-zinc-700'
+                          ? 'bg-zinc-900 text-white'
+                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
                       }`}
                     >
                       {tab.label}
