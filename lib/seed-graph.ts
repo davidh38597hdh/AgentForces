@@ -72,7 +72,7 @@ export function buildProjectSeed(seed: string): {
 
   // Orchestrate + AMEP concept: three networks with inter-network external interfaces
   if (seed === 'orchestrate') {
-    const mesh = { name: 'AgentForce Mesh', color: '#6366f1' };
+    const mesh = { name: 'AgentxForces Mesh', color: '#6366f1' };
     const nSup = node('orch-research-sup', 40, 60, role({
       name: 'Research Supervisor',
       role: 'research-supervisor',

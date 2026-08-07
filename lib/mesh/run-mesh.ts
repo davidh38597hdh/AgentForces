@@ -141,7 +141,7 @@ async function getModel(
 export async function fetchUrlContent(url: string): Promise<string> {
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AgentForce/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AgentxForces/1.0)' },
       signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return `[Failed ${url}: ${res.status}]`;
@@ -193,7 +193,7 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
 
   const chief = openChiefSession({
     tenantId: input.tenantId,
-    chiefHandle: '@chief-agentforce',
+    chiefHandle: '@chief-agentxforces',
   });
   const hops: MeshHopLog[] = [];
 
@@ -338,7 +338,7 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
         '\n\nWhen your output may be shared with another network or company, include a short "External brief" section with only information safe for partners. Keep internal strategy and sensitive numbers out of that brief.';
     }
     system +=
-      '\n\nYou are part of an AgentForce mesh (Orchestrate + AMEP/1 concepts). Prefer structured handoffs when work should move to another network.';
+      '\n\nYou are part of an AgentxForces mesh (Orchestrate + AMEP/1 concepts). Prefer structured handoffs when work should move to another network.';
 
     let prompt = `Original task:\n${input.task}\n\n`;
     if (primaryNetwork) {

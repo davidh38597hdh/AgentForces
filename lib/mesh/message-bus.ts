@@ -1,5 +1,5 @@
 /**
- * Inter-network MessageBus — Orchestrate/MAS interface, AgentForce TypeScript port.
+ * Inter-network MessageBus — Orchestrate/MAS interface, AgentxForces TypeScript port.
  * SecureBus (AMEP AEAD) can wrap the same interface later.
  */
 

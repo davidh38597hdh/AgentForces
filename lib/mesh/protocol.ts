@@ -2,7 +2,7 @@
  * AMEP/1 protocol labels + mesh envelope types (concept merge from Orchestrate / amep-network).
  *
  * Full AEAD crypto lives in the Python runtime (`amep-network/runtime/agent_crypto`).
- * AgentForce ships the same *shape* on the Vercel product path: versioned protocol id,
+ * AgentxForces ships the same *shape* on the Vercel product path: versioned protocol id,
  * epoch-bound sessions, inter-network envelopes, and a bus interface that can later
  * swap InMemory → SecureBus without changing the app surface.
  */
@@ -61,7 +61,7 @@ export function createSessionMeta(opts?: {
     sessionId,
     networkId: `${tenant}/${sessionId}`,
     epochId,
-    chiefHandle: opts?.chiefHandle || '@chief-agentforce',
+    chiefHandle: opts?.chiefHandle || '@chief-agentxforces',
     createdAt: new Date().toISOString(),
   };
 }

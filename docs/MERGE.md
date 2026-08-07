@@ -1,21 +1,21 @@
-# Merge: Orchestrate / amep-network → AgentForce
+# Merge: Orchestrate / amep-network → AgentxForces
 
 **Date:** 2026-08-07  
-**Product surface:** AgentForce (`reachdavidhuynh/AgentxForce`, agentxforce.com)  
+**Product surface:** AgentxForces (`davidh38597hdh/AgentxForces`, agentxforces.com)  
 **Concept sources:**
 - Orchestrate / Multi-Agent-System — multi-network teams + MessageBus + chief routing  
 - amep-network — AMEP/1 protocol labels, SecureBus shape, cells, epoch sessions, sandboxes  
 
 ## Thesis
 
-**AgentForce** is the customer-facing SaaS (Next.js / Vercel): graph UX, BYOK, auth, portal.  
+**AgentxForces** is the customer-facing SaaS (Next.js / Vercel): graph UX, BYOK, auth, portal.  
 **Orchestrate + AMEP** supply the mesh architecture: networks, chief, inter-network bus, protocol versioning, isolation roadmap.
 
 ```
-Customer UI (AgentForce portal + dashboard)
+Customer UI (AgentxForces portal + dashboard)
         │
         ▼
-Chief router  (@chief-agentforce)  ── keyword route → primary network
+Chief router  (@chief-agentxforces)  ── keyword route → primary network
         │
         ▼
 Networks / cells  (research | computation | creative | custom)
@@ -31,7 +31,7 @@ LLM turns (Vercel AI SDK) · future: sandbox execution plane
 
 ## What landed in this merge
 
-| Concept | AgentForce location | Status |
+| Concept | AgentxForces location | Status |
 |---------|---------------------|--------|
 | AMEP/1 labels + epoch session | `lib/mesh/protocol.ts` | **shipped** (metadata) |
 | MessageBus + envelopes | `lib/mesh/message-bus.ts` | **shipped** (in-memory) |
@@ -48,9 +48,9 @@ LLM turns (Vercel AI SDK) · future: sandbox execution plane
 
 | Layer | Source of truth |
 |-------|-----------------|
-| Product UX + deploy | **AgentForce** (this repo) |
+| Product UX + deploy | **AgentxForces** (this repo) |
 | Protocol specs + crypto suite | `amep-network/protocol/` + `~/.grok/network/` |
-| Hard isolation / sandboxes | amep-network runtime providers (future API behind AgentForce) |
+| Hard isolation / sandboxes | amep-network runtime providers (future API behind AgentxForces) |
 
 Do not treat `agentforge` or Streamlit Orchestrate as product source of truth.
 
@@ -63,4 +63,4 @@ Do not treat `agentforge` or Streamlit Orchestrate as product source of truth.
 
 ## Autonomy note
 
-Major product naming, pricing, and crypto-enforcement defaults still need product owner input. Implementation of mesh concepts inside AgentForce may proceed autonomously.
+Major product naming, pricing, and crypto-enforcement defaults still need product owner input. Implementation of mesh concepts inside AgentxForces may proceed autonomously.

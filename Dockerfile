@@ -1,4 +1,4 @@
-# AgentForce — multi-stage production image (secondary deploy path, not Vercel)
+# AgentxForces — multi-stage production image (secondary deploy path, not Vercel)
 # Works on: Fly.io, Railway, Render, DigitalOcean App Platform, any Docker host
 
 FROM node:22-alpine AS base

@@ -44,6 +44,8 @@ export function getPublicAppUrl(): string {
   for (const c of candidates) {
     if (c?.trim()) return c.trim().replace(/\/$/, '');
   }
+  // Production product domain when env is unset (local dev uses localhost via NODE_ENV)
+  if (process.env.NODE_ENV === 'production') return 'https://agentxforces.com';
   return 'http://localhost:3000';
 }
 

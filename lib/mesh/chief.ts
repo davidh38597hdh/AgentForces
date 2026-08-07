@@ -1,5 +1,5 @@
 /**
- * Chief routing — Orchestrate ChiefNode concept for AgentForce.
+ * Chief routing — Orchestrate ChiefNode concept for AgentxForces.
  * Keyword router (MAS-inspired) chooses primary network; graph edges still drive fan-out.
  */
 

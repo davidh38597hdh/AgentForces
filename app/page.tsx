@@ -5,7 +5,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#0a0a0a] text-zinc-100">
       <header className="border-b border-zinc-900">
         <div className="max-w-3xl mx-auto px-5 h-12 flex items-center justify-between">
-          <span className="text-sm font-medium text-zinc-500">AgentForce</span>
+          <span className="text-sm font-medium text-zinc-500">AgentxForces</span>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-xs text-zinc-500 hover:text-zinc-300">
               Sign in
@@ -22,7 +22,7 @@ export default function Home() {
           Orchestrate mesh · AMEP/1 concepts
         </p>
         <h1 className="text-5xl sm:text-6xl font-medium tracking-tight text-zinc-200 mb-6">
-          AgentForce
+          AgentxForces
         </h1>
         <p className="text-lg text-zinc-500 mb-4 max-w-lg leading-relaxed">
           Multi-network agent meshes — chief routing, inter-network bus, your keys

@@ -1,5 +1,5 @@
 {
-  "name": "agentxforce",
+  "name": "agentxforces",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
-    "docker:build": "docker build -t agentforce:local .",
+    "docker:build": "docker build -t agentxforces:local .",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down"
   },

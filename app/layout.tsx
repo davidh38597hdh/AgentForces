@@ -6,7 +6,7 @@ import { getPublicAppUrl } from '@/lib/deploy';
 const appUrl = getPublicAppUrl();
 
 export const metadata: Metadata = {
-  title: 'AgentForce',
+  title: 'AgentxForces',
   description:
     'Multi-agent mesh — Orchestrate networks, AMEP/1 sessions, BYOK. Deploy on Vercel or Docker/Fly.',
   metadataBase: new URL(appUrl),

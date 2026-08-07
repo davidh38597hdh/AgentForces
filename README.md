@@ -1,17 +1,17 @@
-# AgentForce
+# AgentxForces
 
 Multi-agent **mesh** orchestration — graph UX, per-agent models, BYOK, and Orchestrate + AMEP/1 concepts.
 
-**Live:** [agentxforce.com](https://agentxforce.com)  
-**Repo:** [reachdavidhuynh/AgentxForce](https://github.com/reachdavidhuynh/AgentxForce)
+**Live:** [agentxforces.com](https://agentxforces.com)  
+**Repo:** [davidh38597hdh/AgentxForces](https://github.com/davidh38597hdh/AgentxForces)
 
 ## Product merge
 
-AgentForce unifies:
+AgentxForces unifies:
 
 | Lineage | Contribution |
 |---------|----------------|
-| **AgentForce (this app)** | Next.js dashboard, portal, auth, token router, Vercel deploy |
+| **AgentxForces (this app)** | Next.js dashboard, portal, auth, token router, Vercel deploy |
 | **Orchestrate / MAS** | Multi-network teams, chief routing, inter-network MessageBus |
 | **AMEP/1 (amep-network)** | Protocol id, epoch sessions, envelope shape, SecureBus roadmap |
 
@@ -32,7 +32,7 @@ See [docs/MERGE.md](docs/MERGE.md) for architecture and status.
 ## Setup
 
 ```bash
-cd ~/code/AgentxForce   # or clone path
+cd ~/code/AgentxForces   # or clone path
 npm install
 npm run dev
 ```
@@ -78,7 +78,7 @@ fly deploy
 
 Full guide: [docs/DEPLOY.md](docs/DEPLOY.md).
 
-**Primary domain:** [agentxforce.com](https://agentxforce.com)
+**Primary domain:** [agentxforces.com](https://agentxforces.com)
 
 ## Related (not product SOT)
 
