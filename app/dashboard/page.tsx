@@ -417,6 +417,7 @@ function Dashboard() {
   const [libraryOpen, setLibraryOpen] = useState(true);
   const [inspectorOpen, setInspectorOpen] = useState(true);
   const [libraryQuery, setLibraryQuery] = useState('');
+  const [libraryTab, setLibraryTab] = useState<'agents' | 'companies' | 'providers'>('agents');
   const [inspectorTab, setInspectorTab] = useState<'configure' | 'run'>('configure');
 
   useEffect(() => {
@@ -1108,9 +1109,9 @@ function Dashboard() {
             <div className="px-3 py-3 border-b border-zinc-800/80 flex items-center justify-between gap-2">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
-                  Agent library
+                  Library
                 </p>
-                <p className="text-[10px] text-zinc-600">Drag-ready roles · click to add</p>
+                <p className="text-[10px] text-zinc-600">Agents · companies · providers</p>
               </div>
               <button
                 type="button"
@@ -1121,20 +1122,67 @@ function Dashboard() {
                 ‹
               </button>
             </div>
-            <div className="p-3 border-b border-zinc-800/60">
-              <input
-                value={libraryQuery}
-                onChange={(e) => setLibraryQuery(e.target.value)}
-                placeholder="Search agents…"
-                className="w-full h-8 px-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none focus:border-violet-500/40"
-              />
+
+            {/* Tab strip — agents default; companies & providers tucked away */}
+            <div className="px-2 pt-2 border-b border-zinc-800/60">
+              <div
+                className="flex rounded-lg border border-zinc-800 p-0.5 gap-0.5"
+                role="tablist"
+                aria-label="Library sections"
+              >
+                {(
+                  [
+                    { id: 'agents' as const, label: 'Agents' },
+                    { id: 'companies' as const, label: 'Companies' },
+                    { id: 'providers' as const, label: 'Providers' },
+                  ] as const
+                ).map((tab) => {
+                  const active = libraryTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setLibraryTab(tab.id)}
+                      className={`flex-1 px-1.5 py-1.5 rounded-md text-[10px] font-medium transition-colors ${
+                        active
+                          ? 'bg-zinc-800 text-zinc-100'
+                          : 'text-zinc-500 hover:text-zinc-300'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-4">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
-                  Core agents
-                </p>
+
+            {libraryTab === 'agents' && (
+              <div className="p-3 border-b border-zinc-800/60">
+                <input
+                  value={libraryQuery}
+                  onChange={(e) => setLibraryQuery(e.target.value)}
+                  placeholder="Search agents…"
+                  className="w-full h-8 px-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none focus:border-violet-500/40"
+                />
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto p-3">
+              {libraryTab === 'agents' && (
                 <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+                    Core agents
+                    {addCompanyId && (
+                      <span className="ml-1.5 normal-case tracking-normal font-normal text-zinc-600">
+                        · adds to{' '}
+                        <span style={{ color: companyById(addCompanyId)?.color }}>
+                          {companyById(addCompanyId)?.name}
+                        </span>
+                      </span>
+                    )}
+                  </p>
                   {filteredPresets.map((r) => (
                     <button
                       key={r.id}
@@ -1160,67 +1208,128 @@ function Dashboard() {
                   {filteredPresets.length === 0 && (
                     <p className="text-[11px] text-zinc-600 px-1">No agents match.</p>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setLibraryTab('companies')}
+                    className="w-full mt-3 text-[10px] text-zinc-600 hover:text-zinc-400 text-left px-1"
+                  >
+                    Change default company →
+                  </button>
                 </div>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
-                  Providers
-                </p>
-                <ul className="space-y-1">
-                  {(
-                    [
-                      { id: 'xai', label: 'xAI', models: MODELS.xai.length },
-                      { id: 'openai', label: 'OpenAI', models: MODELS.openai.length },
-                      { id: 'anthropic', label: 'Anthropic', models: MODELS.anthropic.length },
-                    ] as const
-                  ).map((p) => (
-                    <li
-                      key={p.id}
-                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-800/60 text-[11px] text-zinc-400"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/80" />
-                      {p.label}
-                      <span className="ml-auto text-zinc-600">{p.models} models</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
-                  Company for new agents
-                </p>
-                <div className="space-y-1.5">
-                  {COMPANIES.map((c) => {
-                    const active = addCompanyId === c.id;
-                    const count = companyCounts.get(c.name) || 0;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => {
-                          setAddCompanyId(c.id);
-                          switchCompanyFocus(c.id);
-                        }}
-                        className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
-                          active
-                            ? 'border-white/25 bg-zinc-900'
-                            : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700'
-                        }`}
-                      >
-                        <span
-                          className="h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: c.color }}
-                        />
-                        <span className="text-[11px] text-zinc-200 flex-1 truncate">{c.name}</span>
-                        <span className="text-[10px] text-zinc-600 tabular-nums">{count}</span>
-                      </button>
-                    );
-                  })}
+              )}
+
+              {libraryTab === 'companies' && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                      Default company
+                    </p>
+                    <p className="text-[10px] text-zinc-600 leading-relaxed mb-2">
+                      New agents join this company. Click also focuses the canvas.
+                    </p>
+                    <div className="space-y-1.5">
+                      {COMPANIES.map((c) => {
+                        const active = addCompanyId === c.id;
+                        const count = companyCounts.get(c.name) || 0;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setAddCompanyId(c.id);
+                              switchCompanyFocus(c.id);
+                            }}
+                            className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                              active
+                                ? 'border-white/25 bg-zinc-900'
+                                : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700'
+                            }`}
+                          >
+                            <span
+                              className="h-2.5 w-2.5 rounded-full shrink-0"
+                              style={{ backgroundColor: c.color }}
+                            />
+                            <span className="text-[11px] text-zinc-200 flex-1 truncate">
+                              {c.name}
+                            </span>
+                            <span className="text-[10px] text-zinc-600 tabular-nums">{count}</span>
+                            {active && (
+                              <span className="text-[9px] text-zinc-500 uppercase tracking-wide">
+                                default
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryTab('agents')}
+                    className="text-[10px] text-violet-400/90 hover:text-violet-300"
+                  >
+                    ← Back to agents
+                  </button>
                 </div>
-                <p className="text-[10px] text-zinc-600 mt-2 leading-relaxed">
-                  Click a company to set it as default and focus it on the canvas.
-                </p>
-              </div>
+              )}
+
+              {libraryTab === 'providers' && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
+                      Model providers
+                    </p>
+                    <p className="text-[10px] text-zinc-600 leading-relaxed mb-2">
+                      Available on each agent. Set BYOK keys from the header if needed.
+                    </p>
+                    <ul className="space-y-1.5">
+                      {(
+                        [
+                          { id: 'xai', label: 'xAI', models: MODELS.xai.length },
+                          { id: 'openai', label: 'OpenAI', models: MODELS.openai.length },
+                          { id: 'anthropic', label: 'Anthropic', models: MODELS.anthropic.length },
+                        ] as const
+                      ).map((p) => {
+                        const hasKey = Boolean(userKeys[p.id]);
+                        return (
+                          <li
+                            key={p.id}
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-800/60 text-[11px] text-zinc-400 bg-zinc-950/50"
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                hasKey ? 'bg-emerald-500/90' : 'bg-zinc-600'
+                              }`}
+                            />
+                            <span className="text-zinc-200">{p.label}</span>
+                            <span className="ml-auto text-zinc-600">{p.models} models</span>
+                            <span className="text-[9px] text-zinc-600">
+                              {hasKey ? 'key set' : 'env/BYOK'}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowKeys(true);
+                      setShowConnectors(false);
+                    }}
+                    className="w-full h-8 rounded-lg border border-zinc-800 text-[11px] text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
+                  >
+                    Edit API keys
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLibraryTab('agents')}
+                    className="text-[10px] text-violet-400/90 hover:text-violet-300"
+                  >
+                    ← Back to agents
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </aside>
@@ -1588,43 +1697,6 @@ function Dashboard() {
                           </option>
                         ))}
                       </select>
-                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
-                        Company
-                      </label>
-                      <div className="grid grid-cols-1 gap-1.5">
-                        {COMPANIES.map((c) => {
-                          const current = (selected.data as AgentNodeData).company === c.name;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => assignSelectedToCompany(c)}
-                              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
-                                current
-                                  ? 'border-white/30 bg-zinc-900 text-zinc-100'
-                                  : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-200'
-                              }`}
-                              style={
-                                current
-                                  ? { boxShadow: `inset 3px 0 0 ${c.color}` }
-                                  : undefined
-                              }
-                            >
-                              <span
-                                className="h-2 w-2 rounded-full shrink-0"
-                                style={{ backgroundColor: c.color }}
-                              />
-                              {c.name}
-                              {current && (
-                                <span className="ml-auto text-[10px] text-zinc-500">active</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-[10px] text-zinc-600">
-                        Switches company on the node and focuses that company on the canvas.
-                      </p>
                       <label className="flex items-center gap-2 text-xs text-zinc-400">
                         <input
                           type="checkbox"
@@ -1646,34 +1718,93 @@ function Dashboard() {
                         placeholder="research | computation | creative"
                         className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none font-mono"
                       />
-                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
-                        Provider · model
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <select
-                          value={(selected.data as AgentNodeData).provider}
-                          onChange={(e) => {
-                            const provider = e.target.value as Provider;
-                            updateSelected({ provider, model: MODELS[provider][0].id });
-                          }}
-                          className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
-                        >
-                          <option value="xai">xAI</option>
-                          <option value="openai">OpenAI</option>
-                          <option value="anthropic">Anthropic</option>
-                        </select>
-                        <select
-                          value={(selected.data as AgentNodeData).model}
-                          onChange={(e) => updateSelected({ model: e.target.value })}
-                          className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
-                        >
-                          {MODELS[(selected.data as AgentNodeData).provider].map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+
+                      {/* Company & provider tucked behind disclosures */}
+                      <details className="group rounded-lg border border-zinc-800/80 bg-zinc-950/40 open:bg-zinc-950/70">
+                        <summary className="cursor-pointer list-none px-3 py-2 flex items-center gap-2 text-[11px] text-zinc-400 hover:text-zinc-200">
+                          <span
+                            className="h-2 w-2 rounded-full shrink-0"
+                            style={{
+                              backgroundColor: (selected.data as AgentNodeData).color,
+                            }}
+                          />
+                          <span className="flex-1 truncate">
+                            Company ·{' '}
+                            <span className="text-zinc-300">
+                              {(selected.data as AgentNodeData).company}
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-zinc-600 group-open:hidden">Open</span>
+                          <span className="text-[10px] text-zinc-600 hidden group-open:inline">
+                            Close
+                          </span>
+                        </summary>
+                        <div className="px-2 pb-2 space-y-1.5 border-t border-zinc-800/60 pt-2">
+                          {COMPANIES.map((c) => {
+                            const current =
+                              (selected.data as AgentNodeData).company === c.name;
+                            return (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => assignSelectedToCompany(c)}
+                                className={`w-full flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-[11px] transition-colors ${
+                                  current
+                                    ? 'border-white/25 bg-zinc-900 text-zinc-100'
+                                    : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                                }`}
+                              >
+                                <span
+                                  className="h-2 w-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: c.color }}
+                                />
+                                {c.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </details>
+
+                      <details className="group rounded-lg border border-zinc-800/80 bg-zinc-950/40 open:bg-zinc-950/70">
+                        <summary className="cursor-pointer list-none px-3 py-2 flex items-center gap-2 text-[11px] text-zinc-400 hover:text-zinc-200">
+                          <span className="flex-1 truncate">
+                            Provider ·{' '}
+                            <span className="text-zinc-300">
+                              {(selected.data as AgentNodeData).provider} /{' '}
+                              {(selected.data as AgentNodeData).model}
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-zinc-600 group-open:hidden">Open</span>
+                          <span className="text-[10px] text-zinc-600 hidden group-open:inline">
+                            Close
+                          </span>
+                        </summary>
+                        <div className="px-2 pb-2 grid grid-cols-2 gap-2 border-t border-zinc-800/60 pt-2">
+                          <select
+                            value={(selected.data as AgentNodeData).provider}
+                            onChange={(e) => {
+                              const provider = e.target.value as Provider;
+                              updateSelected({ provider, model: MODELS[provider][0].id });
+                            }}
+                            className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
+                          >
+                            <option value="xai">xAI</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                          </select>
+                          <select
+                            value={(selected.data as AgentNodeData).model}
+                            onChange={(e) => updateSelected({ model: e.target.value })}
+                            className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
+                          >
+                            {MODELS[(selected.data as AgentNodeData).provider].map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </details>
                       <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
                         System prompt
                       </label>
