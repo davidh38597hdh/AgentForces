@@ -1258,9 +1258,6 @@ function Dashboard() {
               <Logo size={22} />
               AgentForces
             </Link>
-            <span className="text-[11px] text-zinc-500 hidden sm:inline">
-              Force canvas · boundaries · AMEP/1 · BYOK
-            </span>
             {meshSession && (
               <span className="text-[10px] text-indigo-400/90 hidden md:inline font-mono">
                 {meshSession.protocol} · {meshSession.epochId}
