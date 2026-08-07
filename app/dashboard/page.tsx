@@ -198,6 +198,41 @@ const MODELS: Record<Provider, { id: string; label: string }[]> = {
   ],
 };
 
+/** Top-bar BYOK providers — clear labels for the mesh UI */
+const PROVIDER_KEY_META: {
+  id: Provider;
+  label: string;
+  short: string;
+  placeholder: string;
+  hint: string;
+  accent: string;
+}[] = [
+  {
+    id: 'xai',
+    label: 'xAI (Grok)',
+    short: 'xAI',
+    placeholder: 'xai-…',
+    hint: 'Console → API keys',
+    accent: '#a78bfa',
+  },
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    short: 'OpenAI',
+    placeholder: 'sk-…',
+    hint: 'Platform → API keys',
+    accent: '#22c55e',
+  },
+  {
+    id: 'anthropic',
+    label: 'Anthropic (Claude)',
+    short: 'Anthropic',
+    placeholder: 'sk-ant-…',
+    hint: 'Console → API keys',
+    accent: '#f59e0b',
+  },
+];
+
 const nodeTypes = { agent: AgentNode, companyZone: CompanyZoneNode };
 
 const ZONE_PREFIX = 'zone-';
@@ -432,6 +467,7 @@ function Dashboard() {
   const [urls, setUrls] = useState('');
   const [userKeys, setUserKeys] = useState<UserKeys>({});
   const [showKeys, setShowKeys] = useState(false);
+  const [revealKeys, setRevealKeys] = useState(false);
   const [connectors, setConnectors] = useState<ConnectorConfig[]>([]);
   const [showConnectors, setShowConnectors] = useState(false);
   const [newConnectorType, setNewConnectorType] = useState<ConnectorType>('slack_webhook');
@@ -685,6 +721,17 @@ function Dashboard() {
     try {
       localStorage.setItem(KEYS_STORAGE, JSON.stringify(next));
     } catch {}
+  };
+
+  const keysConfiguredCount = useMemo(
+    () => PROVIDER_KEY_META.filter((p) => Boolean(userKeys[p.id]?.trim())).length,
+    [userKeys]
+  );
+
+  const clearProviderKey = (id: Provider) => {
+    const next = { ...userKeys };
+    delete next[id];
+    saveKeys(next);
   };
 
   const agentNodes = useMemo(
@@ -1124,9 +1171,30 @@ function Dashboard() {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 text-xs text-zinc-500">
-            <button type="button" onClick={() => setShowKeys((s) => !s)} className="hover:text-zinc-300">
-              API keys
+          <div className="flex items-center gap-2 sm:gap-3 text-xs text-zinc-500">
+            <button
+              type="button"
+              onClick={() => {
+                setShowKeys((s) => !s);
+                setShowConnectors(false);
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors ${
+                showKeys
+                  ? 'border-violet-500/40 bg-violet-500/10 text-zinc-100'
+                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+              }`}
+              title="Bring-your-own-key for model providers"
+            >
+              <span className="font-medium">API keys</span>
+              <span
+                className={`text-[10px] tabular-nums px-1.5 py-0.5 rounded-md ${
+                  keysConfiguredCount > 0
+                    ? 'bg-emerald-500/15 text-emerald-400/90'
+                    : 'bg-zinc-800 text-zinc-500'
+                }`}
+              >
+                {keysConfiguredCount}/{PROVIDER_KEY_META.length}
+              </span>
             </button>
             <button
               type="button"
@@ -1134,14 +1202,27 @@ function Dashboard() {
                 setShowConnectors((s) => !s);
                 setShowKeys(false);
               }}
-              className="hover:text-zinc-300"
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors ${
+                showConnectors
+                  ? 'border-cyan-500/40 bg-cyan-500/10 text-zinc-100'
+                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+              }`}
             >
-              Connectors{connectors.length > 0 ? ` (${connectors.length})` : ''}
+              Connectors
+              {connectors.length > 0 && (
+                <span className="text-[10px] tabular-nums text-zinc-500">{connectors.length}</span>
+              )}
             </button>
             {session?.user?.email ? (
               <>
-                <span className="text-zinc-600 hidden md:inline">{session.user.email}</span>
-                <button type="button" onClick={() => signOut({ callbackUrl: '/' })} className="hover:text-zinc-300">
+                <span className="text-zinc-600 hidden md:inline truncate max-w-[10rem]">
+                  {session.user.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="hover:text-zinc-300"
+                >
                   Sign out
                 </button>
               </>
@@ -1153,18 +1234,105 @@ function Dashboard() {
       </header>
 
       {showKeys && (
-        <div className="border-b border-zinc-900 px-4 py-3 shrink-0">
-          <div className="max-w-3xl grid sm:grid-cols-3 gap-2">
-            {(['xai', 'openai', 'anthropic'] as Provider[]).map((p) => (
-              <input
-                key={p}
-                type="password"
-                value={userKeys[p] || ''}
-                onChange={(e) => saveKeys({ ...userKeys, [p]: e.target.value })}
-                placeholder={`${p} api key`}
-                className="h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm focus:outline-none"
-              />
-            ))}
+        <div className="border-b border-zinc-800 bg-black/90 shrink-0">
+          <div className="px-4 py-3 max-w-5xl mx-auto">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
+                  Model API keys (BYOK)
+                </p>
+                <p className="text-[11px] text-zinc-500 mt-0.5 max-w-xl leading-relaxed">
+                  Keys stay in this browser only and are sent with each mesh run. Prefer your own
+                  keys over server env. Leave blank to use server keys when available.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <label className="flex items-center gap-1.5 text-[11px] text-zinc-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={revealKeys}
+                    onChange={(e) => setRevealKeys(e.target.checked)}
+                    className="rounded border-zinc-700"
+                  />
+                  Show keys
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowKeys(false)}
+                  className="text-[11px] text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-md border border-zinc-800"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-3">
+              {PROVIDER_KEY_META.map((p) => {
+                const value = userKeys[p.id] || '';
+                const set = Boolean(value.trim());
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 flex flex-col gap-2"
+                    style={{ boxShadow: set ? `inset 3px 0 0 ${p.accent}` : undefined }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: set ? p.accent : '#3f3f46' }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-zinc-100 truncate">{p.label}</p>
+                        <p className="text-[10px] text-zinc-600 truncate">{p.hint}</p>
+                      </div>
+                      <span
+                        className={`text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${
+                          set
+                            ? 'bg-emerald-500/15 text-emerald-400/90'
+                            : 'bg-zinc-800/80 text-zinc-500'
+                        }`}
+                      >
+                        {set ? 'Set' : 'Empty'}
+                      </span>
+                    </div>
+                    <label className="sr-only" htmlFor={`key-${p.id}`}>
+                      {p.label} API key
+                    </label>
+                    <input
+                      id={`key-${p.id}`}
+                      type={revealKeys ? 'text' : 'password'}
+                      autoComplete="off"
+                      spellCheck={false}
+                      value={value}
+                      onChange={(e) => saveKeys({ ...userKeys, [p.id]: e.target.value })}
+                      placeholder={p.placeholder}
+                      className="w-full h-9 px-3 rounded-lg bg-black border border-zinc-800 text-xs font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/40"
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-zinc-600 font-mono truncate">
+                        {set
+                          ? `${value.trim().slice(0, 6)}… (${value.trim().length} chars)`
+                          : 'Not stored in this browser'}
+                      </span>
+                      {set && (
+                        <button
+                          type="button"
+                          onClick={() => clearProviderKey(p.id)}
+                          className="text-[10px] text-zinc-600 hover:text-red-400 shrink-0"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="mt-3 text-[10px] text-zinc-600 leading-relaxed">
+              Per-agent model is set in the inspector under <span className="text-zinc-500">Provider</span>
+              . Run mesh uses the matching key above (or server env). Never commit keys.
+            </p>
           </div>
         </div>
       )}
@@ -1546,28 +1714,23 @@ function Dashboard() {
                       Available on each agent. Set BYOK keys from the header if needed.
                     </p>
                     <ul className="space-y-1.5">
-                      {(
-                        [
-                          { id: 'xai', label: 'xAI', models: MODELS.xai.length },
-                          { id: 'openai', label: 'OpenAI', models: MODELS.openai.length },
-                          { id: 'anthropic', label: 'Anthropic', models: MODELS.anthropic.length },
-                        ] as const
-                      ).map((p) => {
-                        const hasKey = Boolean(userKeys[p.id]);
+                      {PROVIDER_KEY_META.map((p) => {
+                        const hasKey = Boolean(userKeys[p.id]?.trim());
                         return (
                           <li
                             key={p.id}
                             className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-800/60 text-[11px] text-zinc-400 bg-zinc-950/50"
                           >
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                hasKey ? 'bg-emerald-500/90' : 'bg-zinc-600'
-                              }`}
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{
+                                backgroundColor: hasKey ? p.accent : '#52525b',
+                              }}
                             />
-                            <span className="text-zinc-200">{p.label}</span>
-                            <span className="ml-auto text-zinc-600">{p.models} models</span>
+                            <span className="text-zinc-200 flex-1 truncate">{p.label}</span>
+                            <span className="text-zinc-600">{MODELS[p.id].length} models</span>
                             <span className="text-[9px] text-zinc-600">
-                              {hasKey ? 'key set' : 'env/BYOK'}
+                              {hasKey ? 'key set' : 'empty'}
                             </span>
                           </li>
                         );
@@ -1582,7 +1745,7 @@ function Dashboard() {
                     }}
                     className="w-full h-8 rounded-lg border border-zinc-800 text-[11px] text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
                   >
-                    Edit API keys
+                    Open API keys panel
                   </button>
                   <button
                     type="button"
