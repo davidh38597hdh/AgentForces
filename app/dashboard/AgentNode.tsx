@@ -27,28 +27,27 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
   const focused = d.companyFocused !== false;
   return (
     <div
-      className={`min-w-[190px] max-w-[230px] rounded-xl border bg-zinc-900/95 shadow-lg backdrop-blur transition-opacity duration-200 ${
-        selected ? 'border-white/40 ring-1 ring-white/20' : 'border-zinc-700'
-      } ${d.exposed ? 'ring-1 ring-amber-500/30' : ''} ${focused ? '' : 'opacity-30 grayscale-[40%]'}`}
+      className={`min-w-[190px] max-w-[230px] rounded-xl border bg-white shadow-md shadow-zinc-200/80 transition-opacity duration-200 ${
+        selected ? 'border-violet-400 ring-2 ring-violet-200' : 'border-zinc-200'
+      } ${d.exposed ? 'ring-1 ring-amber-400/50' : ''} ${focused ? '' : 'opacity-35 grayscale-[35%]'}`}
       style={{
         borderLeftWidth: 4,
         borderLeftColor: d.color,
         boxShadow: focused && selected ? `0 0 0 1px ${d.color}55` : undefined,
       }}
     >
-      {/* Multiple inbound connections allowed */}
       <Handle
         id="in"
         type="target"
         position={Position.Left}
-        className="!w-2.5 !h-2.5 !bg-zinc-500 !border-zinc-400"
+        className="!w-2.5 !h-2.5 !bg-zinc-400 !border-zinc-300"
         isConnectable={true}
       />
       <div className="px-3 pt-2.5 pb-1 flex items-center gap-2">
         <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-        <span className="text-sm font-medium text-zinc-100 truncate flex-1">{d.name}</span>
+        <span className="text-sm font-medium text-zinc-900 truncate flex-1">{d.name}</span>
         {d.exposed && (
-          <span className="text-[9px] uppercase tracking-wide text-amber-400/90 border border-amber-500/30 rounded px-1">
+          <span className="text-[9px] uppercase tracking-wide text-amber-700 border border-amber-300 bg-amber-50 rounded px-1">
             Ext
           </span>
         )}
@@ -56,7 +55,7 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
       <div className="px-3 pb-2.5 space-y-0.5">
         <p
           className={`text-[10px] font-medium truncate inline-flex items-center gap-1 max-w-full ${
-            d.company?.trim() ? '' : 'text-zinc-600'
+            d.company?.trim() ? '' : 'text-zinc-400'
           }`}
           style={d.company?.trim() ? { color: d.color } : undefined}
         >
@@ -76,23 +75,22 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
           {d.team} · {d.role}
         </p>
         {d.network && (
-          <p className="text-[10px] text-indigo-400/90 truncate">net:{d.network}</p>
+          <p className="text-[10px] text-indigo-600 truncate">net:{d.network}</p>
         )}
         {d.connectorIds && d.connectorIds.length > 0 && (
-          <p className="text-[10px] text-cyan-500/80 truncate">
+          <p className="text-[10px] text-cyan-700 truncate">
             {d.connectorIds.length} connector{d.connectorIds.length === 1 ? '' : 's'}
           </p>
         )}
-        <p className="text-[10px] text-zinc-600 truncate">
+        <p className="text-[10px] text-zinc-400 truncate">
           {d.provider} · {d.model}
         </p>
       </div>
-      {/* Multiple outbound connections allowed (fan-out) */}
       <Handle
         id="out"
         type="source"
         position={Position.Right}
-        className="!w-2.5 !h-2.5 !bg-zinc-500 !border-zinc-400"
+        className="!w-2.5 !h-2.5 !bg-zinc-400 !border-zinc-300"
         isConnectable={true}
       />
     </div>

@@ -27,7 +27,7 @@ function edgeStyle(crossCompany: boolean): Partial<Edge> {
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#f59e0b' },
       label: 'external',
       labelStyle: { fill: '#f59e0b', fontSize: 10 },
-      labelBgStyle: { fill: '#18181b' },
+      labelBgStyle: { fill: '#ffffff' },
     };
   }
   return {

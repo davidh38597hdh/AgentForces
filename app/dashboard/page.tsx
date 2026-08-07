@@ -419,14 +419,14 @@ function edgeStyle(crossCompany: boolean): Partial<Edge> {
       style: { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 4' },
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#f59e0b' },
       label: 'external',
-      labelStyle: { fill: '#f59e0b', fontSize: 10 },
-      labelBgStyle: { fill: '#18181b' },
+      labelStyle: { fill: '#b45309', fontSize: 10 },
+      labelBgStyle: { fill: '#ffffff' },
     };
   }
   return {
     type: 'smoothstep',
     animated: false,
-    style: { stroke: '#52525b', strokeWidth: 1.5 },
+    style: { stroke: '#a1a1aa', strokeWidth: 1.5 },
     markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#71717a' },
   };
 }
@@ -435,7 +435,7 @@ export default function DashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 text-sm">
+        <div className="min-h-screen bg-zinc-50 flex items-center justify-center text-zinc-500 text-sm">
           Loading mesh…
         </div>
       }
@@ -1154,11 +1154,11 @@ function Dashboard() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0a0a] text-zinc-100">
-      <header className="border-b border-zinc-900 shrink-0">
+    <div className="af-app h-screen flex flex-col bg-zinc-50 text-zinc-900">
+      <header className="af-app-header border-b border-zinc-200 bg-white shrink-0">
         <div className="px-4 h-12 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-zinc-200">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-zinc-800">
               <Logo size={22} />
               AgentForces
             </Link>
@@ -1180,8 +1180,8 @@ function Dashboard() {
               }}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors ${
                 showKeys
-                  ? 'border-violet-500/40 bg-violet-500/10 text-zinc-100'
-                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                  ? 'border-violet-500/40 bg-violet-500/10 text-zinc-900'
+                  : 'border-zinc-200 text-zinc-400 hover:text-zinc-800 hover:border-zinc-300'
               }`}
               title="Bring-your-own-key for model providers"
             >
@@ -1204,8 +1204,8 @@ function Dashboard() {
               }}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 transition-colors ${
                 showConnectors
-                  ? 'border-cyan-500/40 bg-cyan-500/10 text-zinc-100'
-                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                  ? 'border-cyan-500/40 bg-cyan-500/10 text-zinc-900'
+                  : 'border-zinc-200 text-zinc-400 hover:text-zinc-800 hover:border-zinc-300'
               }`}
             >
               Connectors
@@ -1215,30 +1215,30 @@ function Dashboard() {
             </button>
             {session?.user?.email ? (
               <>
-                <span className="text-zinc-600 hidden md:inline truncate max-w-[10rem]">
+                <span className="text-zinc-500 hidden md:inline truncate max-w-[10rem]">
                   {session.user.email}
                 </span>
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: '/' })}
-                  className="hover:text-zinc-300"
+                  className="hover:text-zinc-700"
                 >
                   Sign out
                 </button>
               </>
             ) : (
-              <span className="text-zinc-600">Guest</span>
+              <span className="text-zinc-500">Guest</span>
             )}
           </div>
         </div>
       </header>
 
       {showKeys && (
-        <div className="border-b border-zinc-800 bg-black/90 shrink-0">
+        <div className="border-b border-zinc-200 bg-white/95 shrink-0">
           <div className="px-4 py-3 max-w-5xl mx-auto">
             <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
                   Model API keys (BYOK)
                 </p>
                 <p className="text-[11px] text-zinc-500 mt-0.5 max-w-xl leading-relaxed">
@@ -1252,14 +1252,14 @@ function Dashboard() {
                     type="checkbox"
                     checked={revealKeys}
                     onChange={(e) => setRevealKeys(e.target.checked)}
-                    className="rounded border-zinc-700"
+                    className="rounded border-zinc-300"
                   />
                   Show keys
                 </label>
                 <button
                   type="button"
                   onClick={() => setShowKeys(false)}
-                  className="text-[11px] text-zinc-500 hover:text-zinc-300 px-2 py-1 rounded-md border border-zinc-800"
+                  className="text-[11px] text-zinc-500 hover:text-zinc-700 px-2 py-1 rounded-md border border-zinc-200"
                 >
                   Close
                 </button>
@@ -1273,7 +1273,7 @@ function Dashboard() {
                 return (
                   <div
                     key={p.id}
-                    className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3 flex flex-col gap-2"
+                    className="rounded-xl border border-zinc-200 bg-white p-3 flex flex-col gap-2"
                     style={{ boxShadow: set ? `inset 3px 0 0 ${p.accent}` : undefined }}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -1282,8 +1282,8 @@ function Dashboard() {
                         style={{ backgroundColor: set ? p.accent : '#3f3f46' }}
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-zinc-100 truncate">{p.label}</p>
-                        <p className="text-[10px] text-zinc-600 truncate">{p.hint}</p>
+                        <p className="text-xs font-medium text-zinc-900 truncate">{p.label}</p>
+                        <p className="text-[10px] text-zinc-500 truncate">{p.hint}</p>
                       </div>
                       <span
                         className={`text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${
@@ -1306,10 +1306,10 @@ function Dashboard() {
                       value={value}
                       onChange={(e) => saveKeys({ ...userKeys, [p.id]: e.target.value })}
                       placeholder={p.placeholder}
-                      className="w-full h-9 px-3 rounded-lg bg-black border border-zinc-800 text-xs font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500/40"
+                      className="w-full h-9 px-3 rounded-lg bg-white border border-zinc-200 text-xs font-mono text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500/40"
                     />
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-zinc-600 font-mono truncate">
+                      <span className="text-[10px] text-zinc-500 font-mono truncate">
                         {set
                           ? `${value.trim().slice(0, 6)}… (${value.trim().length} chars)`
                           : 'Not stored in this browser'}
@@ -1318,7 +1318,7 @@ function Dashboard() {
                         <button
                           type="button"
                           onClick={() => clearProviderKey(p.id)}
-                          className="text-[10px] text-zinc-600 hover:text-red-400 shrink-0"
+                          className="text-[10px] text-zinc-500 hover:text-red-400 shrink-0"
                         >
                           Clear
                         </button>
@@ -1329,7 +1329,7 @@ function Dashboard() {
               })}
             </div>
 
-            <p className="mt-3 text-[10px] text-zinc-600 leading-relaxed">
+            <p className="mt-3 text-[10px] text-zinc-500 leading-relaxed">
               Per-agent model is set in the inspector under <span className="text-zinc-500">Provider</span>
               . Run mesh uses the matching key above (or server env). Never commit keys.
             </p>
@@ -1338,21 +1338,21 @@ function Dashboard() {
       )}
 
       {showConnectors && (
-        <div className="border-b border-zinc-900 px-4 py-3 shrink-0 max-h-[42vh] overflow-y-auto">
+        <div className="border-b border-zinc-200 px-4 py-3 shrink-0 max-h-[42vh] overflow-y-auto">
           <div className="max-w-3xl space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   Connectors
                 </p>
-                <p className="text-[10px] text-zinc-600">
+                <p className="text-[10px] text-zinc-500">
                   BYOK Slack / Gmail / webhooks · stored only in this browser · assign per agent
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowConnectors(false)}
-                className="text-[11px] text-zinc-500 hover:text-zinc-300"
+                className="text-[11px] text-zinc-500 hover:text-zinc-700"
               >
                 Close
               </button>
@@ -1363,11 +1363,11 @@ function Dashboard() {
                 {connectors.map((c) => (
                   <li
                     key={c.id}
-                    className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2"
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-zinc-200 truncate">{c.name}</p>
-                      <p className="text-[10px] text-zinc-600">
+                      <p className="text-xs text-zinc-800 truncate">{c.name}</p>
+                      <p className="text-[10px] text-zinc-500">
                         {CONNECTOR_TYPE_META[c.type].label}
                         {c.notifyOnComplete ? ' · notify on complete' : ''}
                       </p>
@@ -1383,7 +1383,7 @@ function Dashboard() {
                     <button
                       type="button"
                       onClick={() => removeConnector(c.id)}
-                      className="text-[10px] text-zinc-600 hover:text-red-400"
+                      className="text-[10px] text-zinc-500 hover:text-red-400"
                     >
                       Remove
                     </button>
@@ -1392,7 +1392,7 @@ function Dashboard() {
               </ul>
             )}
 
-            <div className="rounded-lg border border-zinc-800 bg-black/40 p-3 space-y-2">
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 space-y-2">
               <p className="text-[10px] uppercase tracking-wider text-zinc-500">Add connector</p>
               <div className="grid sm:grid-cols-2 gap-2">
                 <select
@@ -1401,7 +1401,7 @@ function Dashboard() {
                     setNewConnectorType(e.target.value as ConnectorType);
                     setNewConnectorFields({});
                   }}
-                  className="h-9 px-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs"
+                  className="h-9 px-2 rounded-lg bg-white border border-zinc-200 text-xs"
                 >
                   {CONNECTOR_TYPES.map((t) => (
                     <option key={t} value={t}>
@@ -1413,7 +1413,7 @@ function Dashboard() {
                   value={newConnectorName}
                   onChange={(e) => setNewConnectorName(e.target.value)}
                   placeholder="Display name (optional)"
-                  className="h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none"
+                  className="h-9 px-3 rounded-lg bg-white border border-zinc-200 text-xs focus:outline-none"
                 />
               </div>
               {CONNECTOR_TYPE_META[newConnectorType].fields.map((f) => (
@@ -1425,7 +1425,7 @@ function Dashboard() {
                     setNewConnectorFields((prev) => ({ ...prev, [f.key]: e.target.value }))
                   }
                   placeholder={f.placeholder || f.label}
-                  className="w-full h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none"
+                  className="w-full h-9 px-3 rounded-lg bg-white border border-zinc-200 text-xs focus:outline-none"
                 />
               ))}
               <label className="flex items-center gap-2 text-[11px] text-zinc-500">
@@ -1439,11 +1439,11 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={addConnector}
-                className="h-9 px-3 rounded-lg bg-white text-black text-xs font-medium"
+                className="h-9 px-3 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-500"
               >
                 Save connector
               </button>
-              <p className="text-[10px] text-zinc-600 leading-relaxed">
+              <p className="text-[10px] text-zinc-500 leading-relaxed">
                 Gmail needs an{' '}
                 <a
                   href="https://myaccount.google.com/apppasswords"
@@ -1463,22 +1463,22 @@ function Dashboard() {
       <div className="flex-1 min-h-0 flex relative">
         {/* —— Left: Agent library (toggle) —— */}
         <aside
-          className={`shrink-0 border-r border-zinc-800/80 bg-black/80 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
+          className={`shrink-0 border-r border-zinc-200 bg-white/90 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
             libraryOpen ? 'w-[260px]' : 'w-0 border-r-0'
           }`}
         >
           <div className="w-[260px] h-full flex flex-col min-h-0">
-            <div className="px-3 py-3 border-b border-zinc-800/80 flex items-center justify-between gap-2">
+            <div className="px-3 py-3 border-b border-zinc-200 flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
                   Library
                 </p>
-                <p className="text-[10px] text-zinc-600">Agents · companies · providers</p>
+                <p className="text-[10px] text-zinc-500">Agents · companies · providers</p>
               </div>
               <button
                 type="button"
                 onClick={() => setLibraryOpen(false)}
-                className="text-zinc-500 hover:text-zinc-200 text-xs px-1.5 py-1 rounded border border-zinc-800"
+                className="text-zinc-500 hover:text-zinc-800 text-xs px-1.5 py-1 rounded border border-zinc-200"
                 title="Hide library"
               >
                 ‹
@@ -1486,9 +1486,9 @@ function Dashboard() {
             </div>
 
             {/* Tab strip — agents default; companies & providers tucked away */}
-            <div className="px-2 pt-2 border-b border-zinc-800/60">
+            <div className="px-2 pt-2 border-b border-zinc-200">
               <div
-                className="flex rounded-lg border border-zinc-800 p-0.5 gap-0.5"
+                className="flex rounded-lg border border-zinc-200 p-0.5 gap-0.5"
                 role="tablist"
                 aria-label="Library sections"
               >
@@ -1509,8 +1509,8 @@ function Dashboard() {
                       onClick={() => setLibraryTab(tab.id)}
                       className={`flex-1 px-1.5 py-1.5 rounded-md text-[10px] font-medium transition-colors ${
                         active
-                          ? 'bg-zinc-800 text-zinc-100'
-                          : 'text-zinc-500 hover:text-zinc-300'
+                          ? 'bg-zinc-800 text-zinc-900'
+                          : 'text-zinc-500 hover:text-zinc-700'
                       }`}
                     >
                       {tab.label}
@@ -1521,12 +1521,12 @@ function Dashboard() {
             </div>
 
             {libraryTab === 'agents' && (
-              <div className="p-3 border-b border-zinc-800/60">
+              <div className="p-3 border-b border-zinc-200">
                 <input
                   value={libraryQuery}
                   onChange={(e) => setLibraryQuery(e.target.value)}
                   placeholder="Search agents…"
-                  className="w-full h-8 px-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none focus:border-violet-500/40"
+                  className="w-full h-8 px-2.5 rounded-lg bg-white border border-zinc-200 text-xs focus:outline-none focus:border-violet-500/40"
                 />
               </div>
             )}
@@ -1537,7 +1537,7 @@ function Dashboard() {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
                     Core agents
                     {addCompanyId && companyById(companies, addCompanyId) ? (
-                      <span className="ml-1.5 normal-case tracking-normal font-normal text-zinc-600">
+                      <span className="ml-1.5 normal-case tracking-normal font-normal text-zinc-500">
                         · adds to{' '}
                         <span
                           style={{ color: companyById(companies, addCompanyId)!.color }}
@@ -1546,7 +1546,7 @@ function Dashboard() {
                         </span>
                       </span>
                     ) : (
-                      <span className="ml-1.5 normal-case tracking-normal font-normal text-zinc-600">
+                      <span className="ml-1.5 normal-case tracking-normal font-normal text-zinc-500">
                         · no company
                       </span>
                     )}
@@ -1556,30 +1556,30 @@ function Dashboard() {
                       key={r.id}
                       type="button"
                       onClick={() => addAgent(r)}
-                      className="w-full text-left rounded-lg border border-zinc-800/80 bg-zinc-950/60 hover:border-violet-500/40 hover:bg-zinc-900/80 px-2.5 py-2 transition-colors"
+                      className="w-full text-left rounded-lg border border-zinc-200 bg-zinc-50 hover:border-violet-500/40 hover:bg-zinc-100 px-2.5 py-2 transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <span
                           className="h-2 w-2 rounded-full shrink-0"
                           style={{ backgroundColor: r.color }}
                         />
-                        <span className="text-xs font-medium text-zinc-200">{r.name}</span>
+                        <span className="text-xs font-medium text-zinc-800">{r.name}</span>
                         {r.defaultExposed && (
                           <span className="ml-auto text-[9px] text-amber-500/80 border border-amber-500/30 rounded px-1">
                             Ext
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] text-zinc-600 mt-0.5 pl-4 truncate">{r.team}</p>
+                      <p className="text-[10px] text-zinc-500 mt-0.5 pl-4 truncate">{r.team}</p>
                     </button>
                   ))}
                   {filteredPresets.length === 0 && (
-                    <p className="text-[11px] text-zinc-600 px-1">No agents match.</p>
+                    <p className="text-[11px] text-zinc-500 px-1">No agents match.</p>
                   )}
                   <button
                     type="button"
                     onClick={() => setLibraryTab('companies')}
-                    className="w-full mt-3 text-[10px] text-zinc-600 hover:text-zinc-400 text-left px-1"
+                    className="w-full mt-3 text-[10px] text-zinc-500 hover:text-zinc-400 text-left px-1"
                   >
                     {companies.length ? 'Manage companies →' : 'Create companies →'}
                   </button>
@@ -1592,7 +1592,7 @@ function Dashboard() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
                       Your companies
                     </p>
-                    <p className="text-[10px] text-zinc-600 leading-relaxed mb-2">
+                    <p className="text-[10px] text-zinc-500 leading-relaxed mb-2">
                       No presets — add the orgs you field. Optional default for new agents.
                     </p>
                     <div className="flex gap-1.5 mb-3">
@@ -1606,7 +1606,7 @@ function Dashboard() {
                           }
                         }}
                         placeholder="New company name"
-                        className="flex-1 h-8 px-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none focus:border-violet-500/40"
+                        className="flex-1 h-8 px-2.5 rounded-lg bg-white border border-zinc-200 text-xs focus:outline-none focus:border-violet-500/40"
                       />
                       <button
                         type="button"
@@ -1614,7 +1614,7 @@ function Dashboard() {
                           const created = createCompany(newCompanyName);
                           if (created) setNewCompanyName('');
                         }}
-                        className="h-8 px-2.5 rounded-lg bg-white text-black text-[11px] font-medium shrink-0"
+                        className="h-8 px-2.5 rounded-lg bg-violet-600 text-white text-[11px] font-medium shrink-0 hover:bg-violet-500"
                       >
                         Add
                       </button>
@@ -1628,12 +1628,12 @@ function Dashboard() {
                         }}
                         className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
                           !addCompanyId
-                            ? 'border-white/25 bg-zinc-900'
-                            : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700'
+                            ? 'border-white/25 bg-zinc-100'
+                            : 'border-zinc-200 bg-zinc-50 hover:border-zinc-300'
                         }`}
                       >
                         <span className="h-2.5 w-2.5 rounded-full shrink-0 bg-zinc-600" />
-                        <span className="text-[11px] text-zinc-200 flex-1">No company</span>
+                        <span className="text-[11px] text-zinc-800 flex-1">No company</span>
                         {!addCompanyId && (
                           <span className="text-[9px] text-zinc-500 uppercase tracking-wide">
                             default
@@ -1648,8 +1648,8 @@ function Dashboard() {
                             key={c.id}
                             className={`flex items-center gap-1 rounded-lg border px-1 py-1 ${
                               active
-                                ? 'border-white/25 bg-zinc-900'
-                                : 'border-zinc-800/80 bg-zinc-950/60'
+                                ? 'border-white/25 bg-zinc-100'
+                                : 'border-zinc-200 bg-zinc-50'
                             }`}
                           >
                             <button
@@ -1664,10 +1664,10 @@ function Dashboard() {
                                 className="h-2.5 w-2.5 rounded-full shrink-0"
                                 style={{ backgroundColor: c.color }}
                               />
-                              <span className="text-[11px] text-zinc-200 flex-1 truncate">
+                              <span className="text-[11px] text-zinc-800 flex-1 truncate">
                                 {c.name}
                               </span>
-                              <span className="text-[10px] text-zinc-600 tabular-nums">
+                              <span className="text-[10px] text-zinc-500 tabular-nums">
                                 {count}
                               </span>
                               {active && (
@@ -1679,7 +1679,7 @@ function Dashboard() {
                             <button
                               type="button"
                               onClick={() => removeCompany(c.id)}
-                              className="text-[10px] text-zinc-600 hover:text-red-400 px-1.5 py-1 shrink-0"
+                              className="text-[10px] text-zinc-500 hover:text-red-400 px-1.5 py-1 shrink-0"
                               title="Remove company"
                             >
                               ×
@@ -1688,7 +1688,7 @@ function Dashboard() {
                         );
                       })}
                       {companies.length === 0 && (
-                        <p className="text-[11px] text-zinc-600 px-1 py-2">
+                        <p className="text-[11px] text-zinc-500 px-1 py-2">
                           Empty catalog. Add a company to assign agents and show lanes.
                         </p>
                       )}
@@ -1710,7 +1710,7 @@ function Dashboard() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
                       Model providers
                     </p>
-                    <p className="text-[10px] text-zinc-600 leading-relaxed mb-2">
+                    <p className="text-[10px] text-zinc-500 leading-relaxed mb-2">
                       Available on each agent. Set BYOK keys from the header if needed.
                     </p>
                     <ul className="space-y-1.5">
@@ -1719,7 +1719,7 @@ function Dashboard() {
                         return (
                           <li
                             key={p.id}
-                            className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-800/60 text-[11px] text-zinc-400 bg-zinc-950/50"
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-200 text-[11px] text-zinc-400 bg-zinc-50"
                           >
                             <span
                               className="h-1.5 w-1.5 rounded-full"
@@ -1727,9 +1727,9 @@ function Dashboard() {
                                 backgroundColor: hasKey ? p.accent : '#52525b',
                               }}
                             />
-                            <span className="text-zinc-200 flex-1 truncate">{p.label}</span>
-                            <span className="text-zinc-600">{MODELS[p.id].length} models</span>
-                            <span className="text-[9px] text-zinc-600">
+                            <span className="text-zinc-800 flex-1 truncate">{p.label}</span>
+                            <span className="text-zinc-500">{MODELS[p.id].length} models</span>
+                            <span className="text-[9px] text-zinc-500">
                               {hasKey ? 'key set' : 'empty'}
                             </span>
                           </li>
@@ -1743,7 +1743,7 @@ function Dashboard() {
                       setShowKeys(true);
                       setShowConnectors(false);
                     }}
-                    className="w-full h-8 rounded-lg border border-zinc-800 text-[11px] text-zinc-400 hover:text-zinc-200 hover:border-zinc-700"
+                    className="w-full h-8 rounded-lg border border-zinc-200 text-[11px] text-zinc-400 hover:text-zinc-800 hover:border-zinc-300"
                   >
                     Open API keys panel
                   </button>
@@ -1764,7 +1764,7 @@ function Dashboard() {
           <button
             type="button"
             onClick={() => setLibraryOpen(true)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 rounded-r-lg border border-l-0 border-zinc-700 bg-zinc-950/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-violet-300 writing-mode-vertical"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 rounded-r-lg border border-l-0 border-zinc-300 bg-white/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-violet-300 writing-mode-vertical"
             style={{ writingMode: 'vertical-rl' }}
             title="Show agent library"
           >
@@ -1794,11 +1794,11 @@ function Dashboard() {
               nodeTypes={nodeTypes}
               fitView
               proOptions={{ hideAttribution: true }}
-              className="bg-[#000000]"
+              className="bg-slate-50"
               nodesDraggable
               elementsSelectable
             >
-              <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1c1c1e" />
+              <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d4d4d8" />
               <Controls />
               <MiniMap
                 nodeColor={(n) => {
@@ -1807,7 +1807,7 @@ function Dashboard() {
                   }
                   return (n.data as AgentNodeData)?.color || '#52525b';
                 }}
-                maskColor="rgba(0,0,0,0.75)"
+                maskColor="rgba(244,244,245,0.7)"
                 pannable
                 zoomable
               />
@@ -1820,7 +1820,7 @@ function Dashboard() {
 
               {/* Canvas actions — top; legends live bottom-left */}
               <Panel position="top-center" className="!m-3">
-                <div className="flex flex-wrap items-center justify-center gap-1 rounded-lg border border-zinc-800 bg-black/90 p-1 backdrop-blur">
+                <div className="flex flex-wrap items-center justify-center gap-1 rounded-lg border border-zinc-200 bg-white/95 p-1 backdrop-blur">
                   <button
                     type="button"
                     onClick={arrangeByCompany}
@@ -1832,8 +1832,8 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setShowCompanyLanes((v) => !v)}
-                    className={`text-[11px] px-2 py-1 rounded-md border border-zinc-800 ${
-                      showCompanyLanes ? 'text-violet-300' : 'text-zinc-500 hover:text-zinc-300'
+                    className={`text-[11px] px-2 py-1 rounded-md border border-zinc-200 ${
+                      showCompanyLanes ? 'text-violet-300' : 'text-zinc-500 hover:text-zinc-700'
                     }`}
                   >
                     {showCompanyLanes ? 'Lanes on' : 'Lanes off'}
@@ -1848,21 +1848,21 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={() => setEdges([])}
-                    className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-700"
                   >
                     Clear links
                   </button>
                   <button
                     type="button"
                     onClick={() => setLibraryOpen((o) => !o)}
-                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-800"
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-200"
                   >
                     {libraryOpen ? 'Hide library' : 'Library'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setInspectorOpen((o) => !o)}
-                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-800"
+                    className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-200"
                   >
                     {inspectorOpen ? 'Hide inspector' : 'Inspector'}
                   </button>
@@ -1871,22 +1871,22 @@ function Dashboard() {
 
               {/* Mesh legend — bottom left, clearly labeled */}
               <Panel position="bottom-left" className="!m-3">
-                <div className="w-[min(100vw-2rem,20rem)] space-y-2">
-                  <div className="rounded-xl border border-zinc-800 bg-black/95 backdrop-blur shadow-xl overflow-hidden">
-                    <div className="px-3 py-2 border-b border-zinc-800/80 flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
+                <div className="w-[min(100vw-2rem,20rem)] space-y-2 text-zinc-800">
+                  <div className="rounded-xl border border-zinc-200 bg-white/95 backdrop-blur shadow-lg shadow-zinc-200/60 overflow-hidden">
+                    <div className="px-3 py-2 border-b border-zinc-200 flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
                         Mesh legend
                       </p>
-                      <span className="text-[10px] text-zinc-600 tabular-nums">
+                      <span className="text-[10px] text-zinc-500 tabular-nums">
                         {agentNodes.length} agent{agentNodes.length === 1 ? '' : 's'}
                       </span>
                     </div>
 
                     {/* Companies / focus filter */}
-                    <div className="px-3 py-2.5 border-b border-zinc-800/60">
+                    <div className="px-3 py-2.5 border-b border-zinc-200">
                       <p className="text-[10px] font-medium text-zinc-500 mb-1.5">
                         Companies{' '}
-                        <span className="font-normal text-zinc-600">— click to focus</span>
+                        <span className="font-normal text-zinc-500">— click to focus</span>
                       </p>
                       <div className="flex flex-wrap gap-1">
                         <button
@@ -1894,14 +1894,14 @@ function Dashboard() {
                           onClick={() => switchCompanyFocus('all')}
                           className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
                             focusCompanyId === 'all'
-                              ? 'border-white/30 bg-zinc-800 text-zinc-100'
-                              : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                              ? 'border-white/30 bg-zinc-800 text-zinc-900'
+                              : 'border-zinc-200 text-zinc-500 hover:text-zinc-700'
                           }`}
                         >
                           All ({agentNodes.length})
                         </button>
                         {companiesOnMesh.length === 0 ? (
-                          <span className="text-[10px] text-zinc-600 self-center px-1">
+                          <span className="text-[10px] text-zinc-500 self-center px-1">
                             None yet — add in Library → Companies
                           </span>
                         ) : (
@@ -1916,8 +1916,8 @@ function Dashboard() {
                                 title={`Focus ${c.name}`}
                                 className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-md border transition-colors ${
                                   active
-                                    ? 'text-zinc-100 border-transparent'
-                                    : 'border-zinc-800 text-zinc-500 hover:text-zinc-300'
+                                    ? 'text-zinc-900 border-transparent'
+                                    : 'border-zinc-200 text-zinc-500 hover:text-zinc-700'
                                 }`}
                                 style={
                                   active
@@ -1945,7 +1945,7 @@ function Dashboard() {
                     <div className="px-3 py-2.5 space-y-2">
                       <p className="text-[10px] font-medium text-zinc-500">
                         Symbols{' '}
-                        <span className="font-normal text-zinc-600">— what you see on the graph</span>
+                        <span className="font-normal text-zinc-500">— what you see on the graph</span>
                       </p>
                       <ul className="space-y-1.5">
                         <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
@@ -1954,8 +1954,8 @@ function Dashboard() {
                             aria-hidden
                           />
                           <span>
-                            <span className="text-zinc-300">Internal link</span>
-                            <span className="text-zinc-600"> — same company / network</span>
+                            <span className="text-zinc-700">Internal link</span>
+                            <span className="text-zinc-500"> — same company / network</span>
                           </span>
                         </li>
                         <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
@@ -1965,7 +1965,7 @@ function Dashboard() {
                           />
                           <span>
                             <span className="text-amber-400/90">External / Ext link</span>
-                            <span className="text-zinc-600"> — cross-company or inter-network</span>
+                            <span className="text-zinc-500"> — cross-company or inter-network</span>
                           </span>
                         </li>
                         <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
@@ -1975,8 +1975,8 @@ function Dashboard() {
                             </span>
                           </span>
                           <span>
-                            <span className="text-zinc-300">Ext agent</span>
-                            <span className="text-zinc-600"> — may talk across boundaries</span>
+                            <span className="text-zinc-700">Ext agent</span>
+                            <span className="text-zinc-500"> — may talk across boundaries</span>
                           </span>
                         </li>
                         <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
@@ -1984,8 +1984,8 @@ function Dashboard() {
                             <span className="h-2.5 w-2.5 rounded border border-dashed border-violet-500/50 bg-violet-500/10" />
                           </span>
                           <span>
-                            <span className="text-zinc-300">Company lane</span>
-                            <span className="text-zinc-600"> — dashed frame around an org</span>
+                            <span className="text-zinc-700">Company lane</span>
+                            <span className="text-zinc-500"> — dashed frame around an org</span>
                           </span>
                         </li>
                         <li className="flex items-center gap-2.5 text-[10px] text-zinc-400">
@@ -1993,8 +1993,8 @@ function Dashboard() {
                             <span className="h-2 w-2 rounded-full bg-zinc-500 ring-2 ring-white/20" />
                           </span>
                           <span>
-                            <span className="text-zinc-300">Node color</span>
-                            <span className="text-zinc-600"> — company or role accent</span>
+                            <span className="text-zinc-700">Node color</span>
+                            <span className="text-zinc-500"> — company or role accent</span>
                           </span>
                         </li>
                       </ul>
@@ -2002,10 +2002,10 @@ function Dashboard() {
                   </div>
 
                   {selected && (
-                    <div className="rounded-xl border border-zinc-800 bg-black/95 backdrop-blur px-3 py-2.5">
+                    <div className="rounded-xl border border-zinc-200 bg-white/95 backdrop-blur px-3 py-2.5">
                       <p className="text-[10px] font-medium text-zinc-500 mb-1.5">
                         Assign company{' '}
-                        <span className="font-normal text-zinc-600">
+                        <span className="font-normal text-zinc-500">
                           — {(selected.data as AgentNodeData).name}
                         </span>
                       </p>
@@ -2015,8 +2015,8 @@ function Dashboard() {
                           onClick={() => assignSelectedToCompany(null)}
                           className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
                             !(selected.data as AgentNodeData).company?.trim()
-                              ? 'border-white/30 text-zinc-100'
-                              : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                              ? 'border-white/30 text-zinc-900'
+                              : 'border-zinc-200 text-zinc-400 hover:text-zinc-800'
                           }`}
                         >
                           None
@@ -2031,8 +2031,8 @@ function Dashboard() {
                               onClick={() => assignSelectedToCompany(c)}
                               className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
                                 current
-                                  ? 'border-white/30 text-zinc-100'
-                                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                                  ? 'border-white/30 text-zinc-900'
+                                  : 'border-zinc-200 text-zinc-400 hover:text-zinc-800'
                               }`}
                               style={
                                 current
@@ -2049,7 +2049,7 @@ function Dashboard() {
                           );
                         })}
                         {companies.length === 0 && (
-                          <span className="text-[10px] text-zinc-600 self-center">
+                          <span className="text-[10px] text-zinc-500 self-center">
                             Create companies in Library first
                           </span>
                         )}
@@ -2058,7 +2058,7 @@ function Dashboard() {
                   )}
 
                   {connectHint && (
-                    <p className="text-[10px] text-amber-400 bg-black/90 border border-zinc-800 rounded-lg px-2.5 py-1.5">
+                    <p className="text-[10px] text-amber-400 bg-white/95 border border-zinc-200 rounded-lg px-2.5 py-1.5">
                       {connectHint}
                     </p>
                   )}
@@ -2072,7 +2072,7 @@ function Dashboard() {
           <button
             type="button"
             onClick={() => setInspectorOpen(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 rounded-l-lg border border-r-0 border-zinc-700 bg-zinc-950/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-cyan-300"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 rounded-l-lg border border-r-0 border-zinc-300 bg-white/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-cyan-300"
             style={{ writingMode: 'vertical-rl' }}
             title="Show agent inspector"
           >
@@ -2082,20 +2082,20 @@ function Dashboard() {
 
         {/* —— Right: Agent customization (toggle) —— */}
         <aside
-          className={`shrink-0 border-l border-zinc-800/80 bg-black/80 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
+          className={`shrink-0 border-l border-zinc-200 bg-white/90 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
             inspectorOpen ? 'w-[320px]' : 'w-0 border-l-0'
           }`}
         >
           <div className="w-[320px] h-full flex flex-col min-h-0">
-            <div className="px-3 py-2 border-b border-zinc-800/80 flex items-center justify-between gap-2">
-              <div className="flex rounded-lg border border-zinc-800 p-0.5 text-[11px]">
+            <div className="px-3 py-2 border-b border-zinc-200 flex items-center justify-between gap-2">
+              <div className="flex rounded-lg border border-zinc-200 p-0.5 text-[11px]">
                 <button
                   type="button"
                   onClick={() => setInspectorTab('configure')}
                   className={`px-2.5 py-1 rounded-md ${
                     inspectorTab === 'configure'
-                      ? 'bg-zinc-800 text-zinc-100'
-                      : 'text-zinc-500 hover:text-zinc-300'
+                      ? 'bg-zinc-800 text-zinc-900'
+                      : 'text-zinc-500 hover:text-zinc-700'
                   }`}
                 >
                   Configure
@@ -2105,8 +2105,8 @@ function Dashboard() {
                   onClick={() => setInspectorTab('run')}
                   className={`px-2.5 py-1 rounded-md ${
                     inspectorTab === 'run'
-                      ? 'bg-zinc-800 text-zinc-100'
-                      : 'text-zinc-500 hover:text-zinc-300'
+                      ? 'bg-zinc-800 text-zinc-900'
+                      : 'text-zinc-500 hover:text-zinc-700'
                   }`}
                 >
                   Run
@@ -2115,7 +2115,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => setInspectorOpen(false)}
-                className="text-zinc-500 hover:text-zinc-200 text-xs px-1.5 py-1 rounded border border-zinc-800"
+                className="text-zinc-500 hover:text-zinc-800 text-xs px-1.5 py-1 rounded border border-zinc-200"
                 title="Hide inspector"
               >
                 ›
@@ -2133,7 +2133,7 @@ function Dashboard() {
                       <button
                         type="button"
                         onClick={removeSelected}
-                        className="text-[11px] text-zinc-600 hover:text-red-400"
+                        className="text-[11px] text-zinc-500 hover:text-red-400"
                       >
                         Remove
                       </button>
@@ -2141,7 +2141,7 @@ function Dashboard() {
                   </div>
 
                   {!selected && (
-                    <p className="text-xs text-zinc-600 leading-relaxed">
+                    <p className="text-xs text-zinc-500 leading-relaxed">
                       Click a node on the canvas, or add one from the Agent library.
                     </p>
                   )}
@@ -2154,7 +2154,7 @@ function Dashboard() {
                       <input
                         value={(selected.data as AgentNodeData).name}
                         onChange={(e) => updateSelected({ name: e.target.value })}
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-sm border border-zinc-800 focus:outline-none focus:border-violet-500/40"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-sm border border-zinc-200 focus:outline-none focus:border-violet-500/40"
                       />
                       <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
                         Role
@@ -2173,7 +2173,7 @@ function Dashboard() {
                             });
                           }
                         }}
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-xs border border-zinc-200 focus:outline-none"
                       >
                         {ROLE_PRESETS.map((r) => (
                           <option key={r.id} value={r.id}>
@@ -2201,12 +2201,12 @@ function Dashboard() {
                           })
                         }
                         placeholder="research | computation | creative"
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none font-mono"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-xs border border-zinc-200 focus:outline-none font-mono"
                       />
 
                       {/* Company & provider tucked behind disclosures */}
-                      <details className="group rounded-lg border border-zinc-800/80 bg-zinc-950/40 open:bg-zinc-950/70">
-                        <summary className="cursor-pointer list-none px-3 py-2 flex items-center gap-2 text-[11px] text-zinc-400 hover:text-zinc-200">
+                      <details className="group rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
+                        <summary className="cursor-pointer list-none px-3 py-2 flex items-center gap-2 text-[11px] text-zinc-400 hover:text-zinc-800">
                           <span
                             className="h-2 w-2 rounded-full shrink-0"
                             style={{
@@ -2215,24 +2215,24 @@ function Dashboard() {
                           />
                           <span className="flex-1 truncate">
                             Company ·{' '}
-                            <span className="text-zinc-300">
+                            <span className="text-zinc-700">
                               {(selected.data as AgentNodeData).company?.trim() ||
                                 'none'}
                             </span>
                           </span>
-                          <span className="text-[10px] text-zinc-600 group-open:hidden">Open</span>
-                          <span className="text-[10px] text-zinc-600 hidden group-open:inline">
+                          <span className="text-[10px] text-zinc-500 group-open:hidden">Open</span>
+                          <span className="text-[10px] text-zinc-500 hidden group-open:inline">
                             Close
                           </span>
                         </summary>
-                        <div className="px-2 pb-2 space-y-1.5 border-t border-zinc-800/60 pt-2">
+                        <div className="px-2 pb-2 space-y-1.5 border-t border-zinc-200 pt-2">
                           <button
                             type="button"
                             onClick={() => assignSelectedToCompany(null)}
                             className={`w-full flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-[11px] transition-colors ${
                               !(selected.data as AgentNodeData).company?.trim()
-                                ? 'border-white/25 bg-zinc-900 text-zinc-100'
-                                : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                                ? 'border-white/25 bg-zinc-100 text-zinc-900'
+                                : 'border-zinc-200 text-zinc-400 hover:text-zinc-800'
                             }`}
                           >
                             <span className="h-2 w-2 rounded-full shrink-0 bg-zinc-600" />
@@ -2248,8 +2248,8 @@ function Dashboard() {
                                 onClick={() => assignSelectedToCompany(c)}
                                 className={`w-full flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-[11px] transition-colors ${
                                   current
-                                    ? 'border-white/25 bg-zinc-900 text-zinc-100'
-                                    : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                                    ? 'border-white/25 bg-zinc-100 text-zinc-900'
+                                    : 'border-zinc-200 text-zinc-400 hover:text-zinc-800'
                                 }`}
                               >
                                 <span
@@ -2261,35 +2261,35 @@ function Dashboard() {
                             );
                           })}
                           {companies.length === 0 && (
-                            <p className="text-[10px] text-zinc-600 px-1">
+                            <p className="text-[10px] text-zinc-500 px-1">
                               Create companies in Library → Companies first.
                             </p>
                           )}
                         </div>
                       </details>
 
-                      <details className="group rounded-lg border border-zinc-800/80 bg-zinc-950/40 open:bg-zinc-950/70">
-                        <summary className="cursor-pointer list-none px-3 py-2 flex items-center gap-2 text-[11px] text-zinc-400 hover:text-zinc-200">
+                      <details className="group rounded-lg border border-zinc-200 bg-zinc-50 open:bg-white">
+                        <summary className="cursor-pointer list-none px-3 py-2 flex items-center gap-2 text-[11px] text-zinc-400 hover:text-zinc-800">
                           <span className="flex-1 truncate">
                             Provider ·{' '}
-                            <span className="text-zinc-300">
+                            <span className="text-zinc-700">
                               {(selected.data as AgentNodeData).provider} /{' '}
                               {(selected.data as AgentNodeData).model}
                             </span>
                           </span>
-                          <span className="text-[10px] text-zinc-600 group-open:hidden">Open</span>
-                          <span className="text-[10px] text-zinc-600 hidden group-open:inline">
+                          <span className="text-[10px] text-zinc-500 group-open:hidden">Open</span>
+                          <span className="text-[10px] text-zinc-500 hidden group-open:inline">
                             Close
                           </span>
                         </summary>
-                        <div className="px-2 pb-2 grid grid-cols-2 gap-2 border-t border-zinc-800/60 pt-2">
+                        <div className="px-2 pb-2 grid grid-cols-2 gap-2 border-t border-zinc-200 pt-2">
                           <select
                             value={(selected.data as AgentNodeData).provider}
                             onChange={(e) => {
                               const provider = e.target.value as Provider;
                               updateSelected({ provider, model: MODELS[provider][0].id });
                             }}
-                            className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
+                            className="bg-white rounded-lg px-2 py-2 text-xs border border-zinc-200 focus:outline-none"
                           >
                             <option value="xai">xAI</option>
                             <option value="openai">OpenAI</option>
@@ -2298,7 +2298,7 @@ function Dashboard() {
                           <select
                             value={(selected.data as AgentNodeData).model}
                             onChange={(e) => updateSelected({ model: e.target.value })}
-                            className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
+                            className="bg-white rounded-lg px-2 py-2 text-xs border border-zinc-200 focus:outline-none"
                           >
                             {MODELS[(selected.data as AgentNodeData).provider].map((m) => (
                               <option key={m.id} value={m.id}>
@@ -2315,13 +2315,13 @@ function Dashboard() {
                         value={(selected.data as AgentNodeData).system}
                         onChange={(e) => updateSelected({ system: e.target.value })}
                         rows={6}
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none text-zinc-400"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-xs border border-zinc-200 focus:outline-none resize-none text-zinc-400"
                       />
                       <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
                         Connector tools
                       </label>
                       {connectors.length === 0 ? (
-                        <p className="text-[11px] text-zinc-600 leading-relaxed">
+                        <p className="text-[11px] text-zinc-500 leading-relaxed">
                           No connectors yet.{' '}
                           <button
                             type="button"
@@ -2348,8 +2348,8 @@ function Dashboard() {
                                     onChange={() => toggleAgentConnector(c.id)}
                                   />
                                   <span>
-                                    <span className="text-zinc-200">{c.name}</span>
-                                    <span className="block text-[10px] text-zinc-600">
+                                    <span className="text-zinc-800">{c.name}</span>
+                                    <span className="block text-[10px] text-zinc-500">
                                       {CONNECTOR_TYPE_META[c.type].label}
                                     </span>
                                   </span>
@@ -2371,10 +2371,10 @@ function Dashboard() {
                     onChange={(e) => setTask(e.target.value)}
                     rows={3}
                     placeholder="Task for the mesh (chief routes by keywords: research / calc / write…)"
-                    className="w-full bg-transparent text-sm border border-zinc-800 rounded-lg px-3 py-2 focus:outline-none resize-none"
+                    className="w-full bg-transparent text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none resize-none"
                   />
                   <details>
-                    <summary className="text-[11px] text-zinc-600 cursor-pointer list-none">
+                    <summary className="text-[11px] text-zinc-500 cursor-pointer list-none">
                       + Context & URLs
                     </summary>
                     <div className="mt-2 space-y-2">
@@ -2383,16 +2383,16 @@ function Dashboard() {
                         onChange={(e) => setContext(e.target.value)}
                         rows={2}
                         placeholder="Shared notes..."
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-xs border border-zinc-200 focus:outline-none resize-none"
                       />
                       <textarea
                         value={urls}
                         onChange={(e) => setUrls(e.target.value)}
                         rows={2}
                         placeholder="URLs"
-                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-xs border border-zinc-200 focus:outline-none resize-none"
                       />
-                      <p className="text-[10px] text-zinc-600 leading-relaxed">
+                      <p className="text-[10px] text-zinc-500 leading-relaxed">
                         Outbound actions: header →{' '}
                         <button
                           type="button"
@@ -2411,27 +2411,27 @@ function Dashboard() {
                     type="button"
                     onClick={run}
                     disabled={running || !task.trim()}
-                    className="w-full h-10 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-30"
+                    className="w-full h-10 rounded-lg bg-violet-600 text-white text-sm font-medium disabled:opacity-30 hover:bg-violet-500"
                   >
                     {running ? 'Running mesh…' : 'Run mesh'}
                   </button>
                   {error && <p className="text-xs text-red-400">{error}</p>}
-                  <p className="text-[10px] text-zinc-600">
+                  <p className="text-[10px] text-zinc-500">
                     Chief routes the primary network; inter-network hops use the bus. Dashed amber =
                     Ext only.
                   </p>
 
                   {(outcome || log.length > 0 || hops.length > 0) && (
-                    <div className="space-y-4 pt-2 border-t border-zinc-800">
+                    <div className="space-y-4 pt-2 border-t border-zinc-200">
                       {meshSession && (
-                        <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2 space-y-1">
+                        <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 space-y-1">
                           <p className="text-[10px] uppercase tracking-wider text-violet-400/90">
                             Mesh session
                           </p>
                           <p className="text-[11px] text-zinc-400 font-mono">
                             {meshSession.protocol} · {meshSession.transport}
                           </p>
-                          <p className="text-[10px] text-zinc-600 font-mono truncate">
+                          <p className="text-[10px] text-zinc-500 font-mono truncate">
                             epoch {meshSession.epochId}
                           </p>
                           {(securityMeta?.note || meshSession.transport === 'in_memory') && (
@@ -2442,7 +2442,7 @@ function Dashboard() {
                           )}
                           {primaryNetwork && (
                             <p className="text-[11px] text-zinc-400">
-                              Chief → <span className="text-zinc-200">{primaryNetwork}</span>
+                              Chief → <span className="text-zinc-800">{primaryNetwork}</span>
                             </p>
                           )}
                         </div>
@@ -2456,7 +2456,7 @@ function Dashboard() {
                             {hops.map((h) => (
                               <li
                                 key={h.messageId}
-                                className="text-[10px] text-zinc-500 border-l-2 border-zinc-800 pl-2"
+                                className="text-[10px] text-zinc-500 border-l-2 border-zinc-200 pl-2"
                               >
                                 <span
                                   className={
@@ -2468,8 +2468,8 @@ function Dashboard() {
                                   [{h.boundary}]
                                 </span>{' '}
                                 {h.from} → {h.to}{' '}
-                                <span className="text-zinc-600">{h.msgType}</span>
-                                <span className="block text-zinc-600">{h.note}</span>
+                                <span className="text-zinc-500">{h.msgType}</span>
+                                <span className="block text-zinc-500">{h.note}</span>
                               </li>
                             ))}
                           </ul>
@@ -2480,7 +2480,7 @@ function Dashboard() {
                           <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
                             Outcome
                           </h3>
-                          <p className="text-xs text-zinc-300 whitespace-pre-wrap">{outcome}</p>
+                          <p className="text-xs text-zinc-700 whitespace-pre-wrap">{outcome}</p>
                         </div>
                       )}
                       {connectorActions.length > 0 && (
@@ -2492,14 +2492,14 @@ function Dashboard() {
                             {connectorActions.map((a, i) => (
                               <li
                                 key={`${a.connectorId}-${a.action}-${i}`}
-                                className="text-[10px] border-l-2 pl-2 border-zinc-800"
+                                className="text-[10px] border-l-2 pl-2 border-zinc-200"
                               >
                                 <span className={a.ok ? 'text-emerald-500/90' : 'text-red-400'}>
                                   {a.ok ? 'ok' : 'fail'}
                                 </span>{' '}
                                 <span className="text-zinc-400">{a.connectorName}</span>{' '}
-                                <span className="text-zinc-600">{a.action}</span>
-                                <span className="block text-zinc-600">{a.detail}</span>
+                                <span className="text-zinc-500">{a.action}</span>
+                                <span className="block text-zinc-500">{a.detail}</span>
                               </li>
                             ))}
                           </ul>
@@ -2512,7 +2512,7 @@ function Dashboard() {
                             {entry.network && (
                               <span className="text-violet-400/80">net:{entry.network}</span>
                             )}
-                            <span className="text-zinc-600">
+                            <span className="text-zinc-500">
                               {entry.provider} · {entry.model}
                             </span>
                           </div>
