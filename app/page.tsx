@@ -18,14 +18,18 @@ export default function Home() {
       </header>
 
       <main className="max-w-3xl mx-auto px-5 pt-28 pb-20">
+        <p className="text-xs text-zinc-600 uppercase tracking-wider mb-4">
+          Orchestrate mesh · AMEP/1 concepts
+        </p>
         <h1 className="text-5xl sm:text-6xl font-medium tracking-tight text-zinc-200 mb-6">
           AgentForce
         </h1>
-        <p className="text-lg text-zinc-500 mb-4 max-w-md leading-relaxed">
-          Multi-agent graphs — your keys, your models
+        <p className="text-lg text-zinc-500 mb-4 max-w-lg leading-relaxed">
+          Multi-network agent meshes — chief routing, inter-network bus, your keys
         </p>
-        <p className="text-zinc-600 mb-12 max-w-md leading-relaxed text-sm">
-          Sign in with Google, pick a project in the portal, then open your mesh.
+        <p className="text-zinc-600 mb-12 max-w-lg leading-relaxed text-sm">
+          Build graphs across research, computation, and creative networks. Run with Grok and
+          other models. Sign in, pick a project, open the mesh.
         </p>
         <div className="flex gap-3">
           <Link

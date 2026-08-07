@@ -13,6 +13,8 @@ export type SeedAgentData = {
   team: string;
   company: string;
   exposed: boolean;
+  /** Orchestrate network id (research | computation | creative | …) */
+  network?: string;
 };
 
 const COMPANIES = [
@@ -67,6 +69,92 @@ export function buildProjectSeed(seed: string): {
 } {
   const acme = COMPANIES[0];
   const nova = COMPANIES[1];
+
+  // Orchestrate + AMEP concept: three networks with inter-network external interfaces
+  if (seed === 'orchestrate') {
+    const mesh = { name: 'AgentForce Mesh', color: '#6366f1' };
+    const nSup = node('orch-research-sup', 40, 60, role({
+      name: 'Research Supervisor',
+      role: 'research-supervisor',
+      team: 'Research Network',
+      company: mesh.name,
+      color: '#3b82f6',
+      network: 'research',
+      exposed: true,
+      system:
+        'You supervise the Research Network. Break down questions, synthesize findings, and hand off quantitative work to Computation or writing to Creative via inter-network briefs.',
+    }));
+    const nRes = node('orch-researcher', 40, 220, role({
+      name: 'Researcher',
+      role: 'researcher',
+      team: 'Research Network',
+      company: mesh.name,
+      color: '#60a5fa',
+      network: 'research',
+      exposed: false,
+      system: 'You gather information and extract key facts for the Research Network. Concise bullets.',
+    }));
+    const nComp = node('orch-compute', 380, 140, role({
+      name: 'Compute Lead',
+      role: 'compute-lead',
+      team: 'Computation Network',
+      company: mesh.name,
+      color: '#22c55e',
+      network: 'computation',
+      exposed: true,
+      system:
+        'You lead the Computation Network. Solve quantitative problems with clear assumptions and numeric answers. Accept research briefs; return partner-safe results.',
+    }));
+    const nCre = node('orch-creative', 720, 140, role({
+      name: 'Creative Writer',
+      role: 'creative-writer',
+      team: 'Creative Network',
+      company: mesh.name,
+      color: '#a855f7',
+      network: 'creative',
+      exposed: true,
+      system:
+        'You are the Creative Network. Turn research and numbers into clear prose. Match tone; keep inter-network briefs partner-safe.',
+    }));
+    return {
+      nodes: [nSup, nRes, nComp, nCre],
+      edges: [
+        {
+          id: 'e-intra-research',
+          source: nRes.id,
+          target: nSup.id,
+          data: { crossCompany: false, interNetwork: false },
+          ...edgeStyle(false),
+        },
+        {
+          id: 'e-research-compute',
+          source: nSup.id,
+          target: nComp.id,
+          data: { crossCompany: false, interNetwork: true },
+          ...edgeStyle(true),
+          label: 'inter-net',
+        },
+        {
+          id: 'e-compute-creative',
+          source: nComp.id,
+          target: nCre.id,
+          data: { crossCompany: false, interNetwork: true },
+          ...edgeStyle(true),
+          label: 'inter-net',
+        },
+        {
+          id: 'e-research-creative',
+          source: nSup.id,
+          target: nCre.id,
+          data: { crossCompany: false, interNetwork: true },
+          ...edgeStyle(true),
+          label: 'inter-net',
+        },
+      ],
+      task:
+        'Orchestrate a mesh run: research the topic, compute any estimates needed, and produce a short creative brief. Chief will route the primary network from your task wording.',
+    };
+  }
 
   if (seed === 'partnership') {
     const n1 = node(

@@ -11,6 +11,14 @@ export type ProjectTemplate = {
 
 export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   {
+    id: 'orchestrate',
+    title: 'Orchestrate mesh',
+    description:
+      'Research · Computation · Creative networks with chief routing and inter-network bus hops (AMEP/1 concept).',
+    tag: 'Orchestrate + AMEP',
+    seed: 'orchestrate',
+  },
+  {
     id: 'blank',
     title: 'Blank mesh',
     description: 'Empty canvas. Add agents and companies yourself.',

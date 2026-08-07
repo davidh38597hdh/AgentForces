@@ -71,8 +71,8 @@ export default function PortalPage() {
         </h1>
         <p className="text-sm text-zinc-500 mb-10 max-w-lg leading-relaxed">
           {firstVisit
-            ? 'First time here. Pick a pre-configured mesh — companies, teams, and links are set up for you. You can change everything on the canvas.'
-            : 'Open a template or continue on a blank mesh. Templates re-seed the graph for this session.'}
+            ? 'First time here. Start with Orchestrate mesh (research · computation · creative + chief routing), or another template. You can edit everything on the canvas.'
+            : 'Open a template or continue. Orchestrate mesh includes AMEP/1-style bus hops and network routing.'}
         </p>
 
         {!firstVisit && lastProject && (

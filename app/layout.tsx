@@ -4,7 +4,7 @@ import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'AgentForce',
-  description: 'Multi-agent graphs with BYOK, auth, and token routing',
+  description: 'Multi-agent mesh — Orchestrate networks, AMEP/1 sessions, BYOK, Vercel',
   metadataBase: new URL('https://agentxforce.com'),
 };
 

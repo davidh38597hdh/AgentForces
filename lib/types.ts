@@ -1,8 +1,10 @@
+/** Legacy lightweight agent (kept for compatibility). Prefer MeshAgent in lib/mesh. */
 export interface Agent {
   id: string;
   name: string;
   systemPrompt: string;
   model?: string;
+  network?: string;
 }
 
 export interface Workflow {
@@ -18,3 +20,14 @@ export interface RunLog {
   messages: { role: string; content: string; agentName?: string }[];
   createdAt: string;
 }
+
+/** Re-export mesh product types */
+export type {
+  MeshAgent,
+  MeshEdge,
+  MeshHopLog,
+  MeshRunResult,
+  MeshSessionMeta,
+  MeshEnvelope,
+  NetworkSpec,
+} from './mesh';

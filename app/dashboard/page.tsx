@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
   ReactFlow,
@@ -19,10 +20,34 @@ import {
   MarkerType,
 } from '@xyflow/react';
 import AgentNode, { type AgentNodeData } from './AgentNode';
+import { buildProjectSeed } from '@/lib/seed-graph';
 
 type Provider = 'xai' | 'openai' | 'anthropic';
 type UserKeys = Partial<Record<Provider, string>>;
-type LogEntry = { id: string; agent: string; provider: string; model: string; output: string };
+type LogEntry = {
+  id: string;
+  agent: string;
+  provider: string;
+  model: string;
+  output: string;
+  network?: string;
+};
+type HopEntry = {
+  messageId: string;
+  from: string;
+  to: string;
+  msgType: string;
+  boundary: string;
+  sealed: boolean;
+  note: string;
+};
+type SessionMeta = {
+  protocol: string;
+  epochId: string;
+  sessionId: string;
+  chiefHandle: string;
+  transport: string;
+};
 
 const KEYS_STORAGE = 'agentforce_user_keys_v1';
 
@@ -151,6 +176,7 @@ function makeNode(
       team: preset.team,
       company: company.name,
       exposed: preset.defaultExposed,
+      network: undefined,
     } satisfies AgentNodeData,
   };
 }
@@ -175,8 +201,23 @@ function edgeStyle(crossCompany: boolean): Partial<Edge> {
   };
 }
 
-export default function Dashboard() {
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 text-sm">
+          Loading mesh…
+        </div>
+      }
+    >
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+function Dashboard() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([
     makeNode(ROLE_PRESETS[3], COMPANIES[0], 0),
   ]);
@@ -192,10 +233,14 @@ export default function Dashboard() {
   const [genericWebhook, setGenericWebhook] = useState('');
   const [postOutcomeToSlack, setPostOutcomeToSlack] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [hops, setHops] = useState<HopEntry[]>([]);
+  const [meshSession, setMeshSession] = useState<SessionMeta | null>(null);
+  const [primaryNetwork, setPrimaryNetwork] = useState<string | null>(null);
   const [outcome, setOutcome] = useState('');
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
   const [connectHint, setConnectHint] = useState('');
+  const [seedApplied, setSeedApplied] = useState(false);
 
   useEffect(() => {
     try {
@@ -203,6 +248,25 @@ export default function Dashboard() {
       if (raw) setUserKeys(JSON.parse(raw));
     } catch {}
   }, []);
+
+  // Portal → dashboard: apply project seed once
+  useEffect(() => {
+    if (seedApplied) return;
+    const project = searchParams.get('project');
+    if (!project) {
+      setSeedApplied(true);
+      return;
+    }
+    try {
+      const seeded = buildProjectSeed(project);
+      setNodes(seeded.nodes);
+      setEdges(seeded.edges);
+      if (seeded.task) setTask(seeded.task);
+    } catch {
+      /* keep defaults */
+    }
+    setSeedApplied(true);
+  }, [searchParams, seedApplied, setNodes, setEdges]);
 
   const saveKeys = (next: UserKeys) => {
     setUserKeys(next);
@@ -221,7 +285,7 @@ export default function Dashboard() {
     [nodes]
   );
 
-  /** Allow many edges from one node; block cross-company unless both are exposed */
+  /** Allow many edges; block cross-company / inter-network unless both exposed */
   const isValidConnection = useCallback(
     (connection: Connection | Edge) => {
       const source = connection.source;
@@ -232,10 +296,12 @@ export default function Dashboard() {
       const t = getData(target);
       if (!s || !t) return false;
 
-      const cross = s.company !== t.company;
-      if (cross && !(s.exposed && t.exposed)) {
+      const crossCompany = s.company !== t.company;
+      const interNetwork =
+        !!(s.network && t.network && s.network !== t.network) || crossCompany;
+      if (interNetwork && !(s.exposed && t.exposed)) {
         setConnectHint(
-          'Cross-company links require both nodes to be External interfaces (Ext).'
+          'Cross-company / inter-network links require both nodes to be External (Ext) interfaces.'
         );
         return false;
       }
@@ -251,10 +317,11 @@ export default function Dashboard() {
 
       const s = getData(connection.source!);
       const t = getData(connection.target!);
-      const cross = !!(s && t && s.company !== t.company);
+      const crossCompany = !!(s && t && s.company !== t.company);
+      const interNetwork =
+        !!(s?.network && t?.network && s.network !== t.network) || crossCompany;
 
       setEdges((eds) => {
-        // Allow multiple connections; skip exact duplicate only
         const dup = eds.some(
           (e) => e.source === connection.source && e.target === connection.target
         );
@@ -264,8 +331,9 @@ export default function Dashboard() {
           {
             ...connection,
             id: `e-${connection.source}-${connection.target}-${eds.length}`,
-            data: { crossCompany: cross },
-            ...edgeStyle(cross),
+            data: { crossCompany, interNetwork },
+            ...edgeStyle(interNetwork),
+            ...(interNetwork && !crossCompany ? { label: 'inter-net' } : {}),
           },
           eds
         );
@@ -345,6 +413,9 @@ export default function Dashboard() {
     setRunning(true);
     setError('');
     setLog([]);
+    setHops([]);
+    setMeshSession(null);
+    setPrimaryNetwork(null);
     setOutcome('');
     try {
       const agents = nodes.map((n) => {
@@ -357,15 +428,20 @@ export default function Dashboard() {
           model: d.model,
           company: d.company,
           team: d.team,
+          network: d.network,
           exposed: d.exposed,
         };
       });
 
-      const graphEdges = edges.map((e) => ({
-        from: e.source,
-        to: e.target,
-        crossCompany: !!(e.data as { crossCompany?: boolean })?.crossCompany,
-      }));
+      const graphEdges = edges.map((e) => {
+        const data = (e.data || {}) as { crossCompany?: boolean; interNetwork?: boolean };
+        return {
+          from: e.source,
+          to: e.target,
+          crossCompany: !!data.crossCompany,
+          interNetwork: !!data.interNetwork,
+        };
+      });
 
       const res = await fetch('/api/orchestrate', {
         method: 'POST',
@@ -375,6 +451,7 @@ export default function Dashboard() {
           edges: graphEdges,
           task,
           contextText: context,
+          chiefRoute: true,
           urls: urls
             .split('\n')
             .map((u) => u.trim())
@@ -393,9 +470,12 @@ export default function Dashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setLog(data.log || []);
+      setHops(data.hops || []);
+      setMeshSession(data.session || null);
+      setPrimaryNetwork(data.primaryNetwork || null);
       setOutcome(data.outcome || data.final || '');
-    } catch (e: any) {
-      setError(e.message || 'Run failed');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Run failed');
     } finally {
       setRunning(false);
     }
@@ -410,8 +490,13 @@ export default function Dashboard() {
               AgentForce
             </Link>
             <span className="text-[11px] text-zinc-600 hidden sm:inline">
-              Multi-company teams · fan-out links
+              Orchestrate mesh · AMEP/1 · multi-company
             </span>
+            {meshSession && (
+              <span className="text-[10px] text-indigo-400/90 hidden md:inline font-mono">
+                {meshSession.protocol} · {meshSession.epochId}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3 text-xs text-zinc-500">
             <button type="button" onClick={() => setShowKeys((s) => !s)} className="hover:text-zinc-300">
@@ -542,7 +627,7 @@ export default function Dashboard() {
               value={task}
               onChange={(e) => setTask(e.target.value)}
               rows={3}
-              placeholder="What should the companies / teams do?"
+              placeholder="Task for the mesh (chief routes by keywords: research / calc / write…)"
               className="w-full bg-transparent text-sm border border-zinc-800 rounded-lg px-3 py-2 focus:outline-none resize-none"
             />
             <details>
@@ -591,12 +676,12 @@ export default function Dashboard() {
               disabled={running || !task.trim()}
               className="w-full h-10 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-30"
             >
-              {running ? 'Running…' : 'Run graph'}
+              {running ? 'Running mesh…' : 'Run mesh'}
             </button>
             {error && <p className="text-xs text-red-400">{error}</p>}
             <p className="text-[10px] text-zinc-600">
-              One node can link to many. Cross-company links (dashed amber) only between{' '}
-              <span className="text-amber-500">Ext</span> interfaces — e.g. Head of Product ↔ Financial Ops.
+              Chief routes the primary network; inter-network hops use the bus (AMEP/1 envelope shape).
+              Dashed amber = Ext / inter-network only.
             </p>
           </div>
 
@@ -659,8 +744,18 @@ export default function Dashboard() {
                   checked={(selected.data as AgentNodeData).exposed}
                   onChange={(e) => updateSelected({ exposed: e.target.checked })}
                 />
-                External interface (may link across companies)
+                External interface (cross-company / inter-network)
               </label>
+              <input
+                value={(selected.data as AgentNodeData).network || ''}
+                onChange={(e) =>
+                  updateSelected({
+                    network: e.target.value.trim() || undefined,
+                  })
+                }
+                placeholder="Network id (research | computation | creative)"
+                className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none font-mono"
+              />
               <div className="grid grid-cols-2 gap-2">
                 <select
                   value={(selected.data as AgentNodeData).provider}
@@ -695,8 +790,54 @@ export default function Dashboard() {
             </div>
           )}
 
-          {(outcome || log.length > 0) && (
+          {(outcome || log.length > 0 || hops.length > 0) && (
             <div className="p-4 space-y-4 flex-1">
+              {meshSession && (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2 space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-indigo-400/90">
+                    Mesh session
+                  </p>
+                  <p className="text-[11px] text-zinc-400 font-mono">
+                    {meshSession.protocol} · {meshSession.transport}
+                  </p>
+                  <p className="text-[10px] text-zinc-600 font-mono truncate">
+                    epoch {meshSession.epochId}
+                  </p>
+                  {primaryNetwork && (
+                    <p className="text-[11px] text-zinc-400">
+                      Chief → <span className="text-zinc-200">{primaryNetwork}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+              {hops.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                    Bus hops
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {hops.map((h) => (
+                      <li
+                        key={h.messageId}
+                        className="text-[10px] text-zinc-500 border-l-2 border-zinc-800 pl-2"
+                      >
+                        <span
+                          className={
+                            h.boundary === 'inter' || h.boundary === 'chief'
+                              ? 'text-amber-500/90'
+                              : 'text-zinc-400'
+                          }
+                        >
+                          [{h.boundary}]
+                        </span>{' '}
+                        {h.from} → {h.to}{' '}
+                        <span className="text-zinc-600">{h.msgType}</span>
+                        <span className="block text-zinc-600">{h.note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {outcome && (
                 <div>
                   <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Outcome</h3>
@@ -705,8 +846,11 @@ export default function Dashboard() {
               )}
               {log.map((entry, i) => (
                 <div key={entry.id || i}>
-                  <div className="flex gap-2 text-[11px] mb-1">
+                  <div className="flex flex-wrap gap-2 text-[11px] mb-1">
                     <span className="text-zinc-500">{entry.agent}</span>
+                    {entry.network && (
+                      <span className="text-indigo-400/80">net:{entry.network}</span>
+                    )}
                     <span className="text-zinc-600">
                       {entry.provider} · {entry.model}
                     </span>

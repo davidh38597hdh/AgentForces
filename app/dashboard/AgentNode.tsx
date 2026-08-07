@@ -12,8 +12,10 @@ export type AgentNodeData = {
   color: string;
   team: string;
   company: string;
-  /** If true, may send/receive across company boundaries */
+  /** If true, may send/receive across company or network boundaries */
   exposed: boolean;
+  /** Orchestrate network id (research | computation | creative | …) */
+  network?: string;
 };
 
 function AgentNodeComponent({ data, selected }: NodeProps) {
@@ -47,6 +49,9 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
         <p className="text-[10px] truncate" style={{ color: d.color }}>
           {d.team} · {d.role}
         </p>
+        {d.network && (
+          <p className="text-[10px] text-indigo-400/90 truncate">net:{d.network}</p>
+        )}
         <p className="text-[10px] text-zinc-600 truncate">
           {d.provider} · {d.model}
         </p>

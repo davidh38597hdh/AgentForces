@@ -1,23 +1,38 @@
 # AgentForce
 
-Multi-agent graph orchestration with per-agent model choice, BYOK API keys, and token routing.
+Multi-agent **mesh** orchestration — graph UX, per-agent models, BYOK, and Orchestrate + AMEP/1 concepts.
 
-**Live:** [agentxforce.com](https://agentxforce.com)
+**Live:** [agentxforce.com](https://agentxforce.com)  
+**Repo:** [reachdavidhuynh/AgentxForce](https://github.com/reachdavidhuynh/AgentxForce)
+
+## Product merge
+
+AgentForce unifies:
+
+| Lineage | Contribution |
+|---------|----------------|
+| **AgentForce (this app)** | Next.js dashboard, portal, auth, token router, Vercel deploy |
+| **Orchestrate / MAS** | Multi-network teams, chief routing, inter-network MessageBus |
+| **AMEP/1 (amep-network)** | Protocol id, epoch sessions, envelope shape, SecureBus roadmap |
+
+See [docs/MERGE.md](docs/MERGE.md) for architecture and status.
 
 ## Features
 
-- **Multi-provider agents** — xAI (Grok), OpenAI, Anthropic per node
-- **2D graph** — drag-and-drop nodes, fan-in / fan-out connections
-- **Companies & teams** — multi-org graphs with controlled external interfaces
-- **Roles** — Researcher, Coder, Financial Analyst, CEO, Head of Product, and more
-- **BYOK** — paste your API keys in the dashboard (browser storage)
-- **Token router** — control plane → user keys → server env
-- **Auth** — Google + email magic link (NextAuth)
-- **Connectors** — URL fetch, Slack webhook, generic webhook (Zapier)
+- **Mesh run** — chief routes primary network; agents execute on a graph with bus hop logs  
+- **Networks** — research / computation / creative (Orchestrate catalog) + custom network ids  
+- **Multi-provider agents** — xAI (Grok), OpenAI, Anthropic per node  
+- **2D graph** — drag-and-drop, fan-in / fan-out, inter-network Ext edges  
+- **Companies & teams** — multi-org graphs with controlled external interfaces  
+- **BYOK** — API keys in the dashboard (browser storage)  
+- **Token router** — control plane → user keys → server env  
+- **Auth** — Google + email magic link (NextAuth)  
+- **Connectors** — URL fetch, Slack webhook, generic webhook  
 
 ## Setup
 
 ```bash
+cd ~/code/AgentxForce   # or clone path
 npm install
 npm run dev
 ```
@@ -37,11 +52,24 @@ npm run dev
 | `TOKEN_CONTROL_URL` | Optional | Future central key vault |
 | `TOKEN_CONTROL_SECRET` | Optional | Auth for control plane |
 
+## Try the Orchestrate mesh
+
+1. Sign in → Portal → **Orchestrate mesh**  
+2. Inspect research / computation / creative nodes and amber inter-network edges  
+3. Run a task (e.g. “research X, estimate Y, write a short brief”)  
+4. Sidebar shows AMEP/1 session meta + bus hops + agent log  
+
 ## Deploy
 
 Vercel: connect this repo, set env vars, deploy.
 
 **Domain:** [agentxforce.com](https://agentxforce.com)
+
+## Related (not product SOT)
+
+- `reachdavidhuynh/agentforge` — earlier seed  
+- `~/code/amep-network` — Python protocol + SecureBus + sandboxes  
+- `~/Multi-Agent-System` — original Orchestrate Streamlit app  
 
 ## License
 
