@@ -36,7 +36,18 @@ import {
 } from '@/lib/connectors/types';
 
 type Provider = 'xai' | 'openai' | 'anthropic';
+/** Bound provider or null = agnostic (not assigned yet) */
+type KeyProvider = Provider | null;
 type UserKeys = Partial<Record<Provider, string>>;
+
+/** Global BYOK entry — starts provider-agnostic until the user binds one */
+type GlobalApiKey = {
+  id: string;
+  name: string;
+  /** null until user chooses xAI / Claude / OpenAI */
+  provider: KeyProvider;
+  key: string;
+};
 type LogEntry = {
   id: string;
   agent: string;
@@ -68,7 +79,8 @@ type SecurityMeta = {
   note?: string;
 };
 
-const KEYS_STORAGE = 'agentforces_user_keys_v1';
+const KEYS_STORAGE = 'agentforces_user_keys_v1'; // legacy flat map
+const GLOBAL_KEYS_STORAGE = 'agentforces_global_api_keys_v1';
 const CONNECTORS_STORAGE = 'agentforces_connectors_v1';
 const COMPANIES_STORAGE = 'agentforces_companies_v1';
 
@@ -199,8 +211,8 @@ const MODELS: Record<Provider, { id: string; label: string }[]> = {
   ],
 };
 
-/** Top-bar BYOK providers — clear labels for the mesh UI */
-const PROVIDER_KEY_META: {
+/** Global provider choices (none selected by default on new key) */
+const PROVIDER_KEY_OPTIONS: {
   id: Provider;
   label: string;
   short: string;
@@ -213,26 +225,47 @@ const PROVIDER_KEY_META: {
     label: 'xAI (Grok)',
     short: 'xAI',
     placeholder: 'xai-…',
-    hint: 'Console → API keys',
-    accent: '#a78bfa',
+    hint: 'xAI console → API keys',
+    accent: '#7c3aed',
+  },
+  {
+    id: 'anthropic',
+    label: 'Claude (Anthropic)',
+    short: 'Claude',
+    placeholder: 'sk-ant-…',
+    hint: 'Anthropic console → API keys',
+    accent: '#d97706',
   },
   {
     id: 'openai',
     label: 'OpenAI',
     short: 'OpenAI',
     placeholder: 'sk-…',
-    hint: 'Platform → API keys',
-    accent: '#22c55e',
-  },
-  {
-    id: 'anthropic',
-    label: 'Anthropic (Claude)',
-    short: 'Anthropic',
-    placeholder: 'sk-ant-…',
-    hint: 'Console → API keys',
-    accent: '#f59e0b',
+    hint: 'OpenAI platform → API keys',
+    accent: '#16a34a',
   },
 ];
+
+function newApiKeyId(): string {
+  return `key_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function providerMeta(id: KeyProvider) {
+  if (!id) return null;
+  return PROVIDER_KEY_OPTIONS.find((p) => p.id === id) || null;
+}
+
+/** Map global key list → router bag (one key per provider; last bound wins) */
+function globalKeysToUserBag(keys: GlobalApiKey[]): UserKeys {
+  const bag: UserKeys = {};
+  for (const entry of keys) {
+    if (!entry.provider) continue;
+    const k = entry.key.trim();
+    if (!k) continue;
+    bag[entry.provider] = k;
+  }
+  return bag;
+}
 
 const nodeTypes = { agent: AgentNode, companyZone: CompanyZoneNode };
 
@@ -466,9 +499,12 @@ function Dashboard() {
   const [task, setTask] = useState('');
   const [context, setContext] = useState('');
   const [urls, setUrls] = useState('');
-  const [userKeys, setUserKeys] = useState<UserKeys>({});
+  /** Global API keys — empty by default; entries start provider-agnostic */
+  const [globalKeys, setGlobalKeys] = useState<GlobalApiKey[]>([]);
   const [showKeys, setShowKeys] = useState(false);
   const [revealKeys, setRevealKeys] = useState(false);
+
+  const userKeys = useMemo(() => globalKeysToUserBag(globalKeys), [globalKeys]);
   const [connectors, setConnectors] = useState<ConnectorConfig[]>([]);
   const [showConnectors, setShowConnectors] = useState(false);
   const [newConnectorType, setNewConnectorType] = useState<ConnectorType>('slack_webhook');
@@ -494,8 +530,48 @@ function Dashboard() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(KEYS_STORAGE);
-      if (raw) setUserKeys(JSON.parse(raw));
+      const raw = localStorage.getItem(GLOBAL_KEYS_STORAGE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as GlobalApiKey[];
+        if (Array.isArray(parsed)) {
+          setGlobalKeys(
+            parsed
+              .filter((k) => k && typeof k.id === 'string')
+              .map((k) => ({
+                id: k.id,
+                name: typeof k.name === 'string' ? k.name : '',
+                provider:
+                  k.provider === 'xai' || k.provider === 'openai' || k.provider === 'anthropic'
+                    ? k.provider
+                    : null,
+                key: typeof k.key === 'string' ? k.key : '',
+              }))
+          );
+        }
+      } else {
+        // Migrate legacy flat map once → no default keys if empty
+        const legacy = localStorage.getItem(KEYS_STORAGE);
+        if (legacy) {
+          const flat = JSON.parse(legacy) as UserKeys;
+          const migrated: GlobalApiKey[] = [];
+          for (const p of PROVIDER_KEY_OPTIONS) {
+            const v = flat[p.id]?.trim();
+            if (!v) continue;
+            migrated.push({
+              id: newApiKeyId(),
+              name: p.label,
+              provider: p.id,
+              key: v,
+            });
+          }
+          if (migrated.length) {
+            setGlobalKeys(migrated);
+            try {
+              localStorage.setItem(GLOBAL_KEYS_STORAGE, JSON.stringify(migrated));
+            } catch {}
+          }
+        }
+      }
     } catch {}
     try {
       const raw = localStorage.getItem(CONNECTORS_STORAGE);
@@ -717,22 +793,39 @@ function Dashboard() {
     setSeedApplied(true);
   }, [searchParams, seedApplied, setNodes, setEdges, mergeCompaniesFromSeed]);
 
-  const saveKeys = (next: UserKeys) => {
-    setUserKeys(next);
+  const persistGlobalKeys = useCallback((next: GlobalApiKey[]) => {
+    setGlobalKeys(next);
     try {
-      localStorage.setItem(KEYS_STORAGE, JSON.stringify(next));
+      localStorage.setItem(GLOBAL_KEYS_STORAGE, JSON.stringify(next));
+      // Keep legacy bag in sync for any older code paths
+      localStorage.setItem(KEYS_STORAGE, JSON.stringify(globalKeysToUserBag(next)));
     } catch {}
-  };
+  }, []);
 
   const keysConfiguredCount = useMemo(
-    () => PROVIDER_KEY_META.filter((p) => Boolean(userKeys[p.id]?.trim())).length,
-    [userKeys]
+    () => globalKeys.filter((k) => k.provider && k.key.trim()).length,
+    [globalKeys]
   );
 
-  const clearProviderKey = (id: Provider) => {
-    const next = { ...userKeys };
-    delete next[id];
-    saveKeys(next);
+  const addGlobalApiKey = () => {
+    const n = globalKeys.length + 1;
+    const entry: GlobalApiKey = {
+      id: newApiKeyId(),
+      name: n === 1 ? 'API key' : `API key ${n}`,
+      provider: null, // agnostic until user chooses
+      key: '',
+    };
+    persistGlobalKeys([...globalKeys, entry]);
+  };
+
+  const updateGlobalApiKey = (id: string, patch: Partial<GlobalApiKey>) => {
+    persistGlobalKeys(
+      globalKeys.map((k) => (k.id === id ? { ...k, ...patch } : k))
+    );
+  };
+
+  const removeGlobalApiKey = (id: string) => {
+    persistGlobalKeys(globalKeys.filter((k) => k.id !== id));
   };
 
   const agentNodes = useMemo(
@@ -1190,11 +1283,18 @@ function Dashboard() {
               <span
                 className={`text-[10px] tabular-nums px-1.5 py-0.5 rounded-md ${
                   keysConfiguredCount > 0
-                    ? 'bg-emerald-500/15 text-emerald-400/90'
-                    : 'bg-zinc-800 text-zinc-500'
+                    ? 'bg-emerald-500/15 text-emerald-700'
+                    : 'bg-zinc-100 text-zinc-500'
                 }`}
+                title={
+                  globalKeys.length
+                    ? `${keysConfiguredCount} ready · ${globalKeys.length} total (incl. agnostic)`
+                    : 'No global API keys'
+                }
               >
-                {keysConfiguredCount}/{PROVIDER_KEY_META.length}
+                {globalKeys.length === 0
+                  ? '0'
+                  : `${keysConfiguredCount}/${globalKeys.length}`}
               </span>
             </button>
             <button
@@ -1235,16 +1335,18 @@ function Dashboard() {
       </header>
 
       {showKeys && (
-        <div className="border-b border-zinc-200 bg-white/95 shrink-0">
-          <div className="px-4 py-3 max-w-5xl mx-auto">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+        <div className="border-b border-zinc-200 bg-white shrink-0 max-h-[50vh] overflow-y-auto">
+          <div className="px-4 py-3 max-w-3xl mx-auto space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-700">
-                  Model API keys (BYOK)
+                  Global API keys
                 </p>
                 <p className="text-[11px] text-zinc-500 mt-0.5 max-w-xl leading-relaxed">
-                  Keys stay in this browser only and are sent with each mesh run. Prefer your own
-                  keys over server env. Leave blank to use server keys when available.
+                  No keys by default. Add a key as provider-agnostic, then bind it to{' '}
+                  <span className="text-zinc-700">xAI</span>,{' '}
+                  <span className="text-zinc-700">Claude</span>, or{' '}
+                  <span className="text-zinc-700">OpenAI</span>. Stored only in this browser.
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -1259,6 +1361,13 @@ function Dashboard() {
                 </label>
                 <button
                   type="button"
+                  onClick={addGlobalApiKey}
+                  className="text-[11px] font-medium px-2.5 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-500"
+                >
+                  + Add API key
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowKeys(false)}
                   className="text-[11px] text-zinc-500 hover:text-zinc-700 px-2 py-1 rounded-md border border-zinc-200"
                 >
@@ -1267,72 +1376,120 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-3">
-              {PROVIDER_KEY_META.map((p) => {
-                const value = userKeys[p.id] || '';
-                const set = Boolean(value.trim());
-                return (
-                  <div
-                    key={p.id}
-                    className="rounded-xl border border-zinc-200 bg-white p-3 flex flex-col gap-2"
-                    style={{ boxShadow: set ? `inset 3px 0 0 ${p.accent}` : undefined }}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="h-2 w-2 rounded-full shrink-0"
-                        style={{ backgroundColor: set ? p.accent : '#3f3f46' }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-zinc-900 truncate">{p.label}</p>
-                        <p className="text-[10px] text-zinc-500 truncate">{p.hint}</p>
-                      </div>
-                      <span
-                        className={`text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${
-                          set
-                            ? 'bg-emerald-500/15 text-emerald-400/90'
-                            : 'bg-zinc-800/80 text-zinc-500'
-                        }`}
-                      >
-                        {set ? 'Set' : 'Empty'}
-                      </span>
-                    </div>
-                    <label className="sr-only" htmlFor={`key-${p.id}`}>
-                      {p.label} API key
-                    </label>
-                    <input
-                      id={`key-${p.id}`}
-                      type={revealKeys ? 'text' : 'password'}
-                      autoComplete="off"
-                      spellCheck={false}
-                      value={value}
-                      onChange={(e) => saveKeys({ ...userKeys, [p.id]: e.target.value })}
-                      placeholder={p.placeholder}
-                      className="w-full h-9 px-3 rounded-lg bg-white border border-zinc-200 text-xs font-mono text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500/40"
-                    />
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-zinc-500 font-mono truncate">
-                        {set
-                          ? `${value.trim().slice(0, 6)}… (${value.trim().length} chars)`
-                          : 'Not stored in this browser'}
-                      </span>
-                      {set && (
+            {globalKeys.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center">
+                <p className="text-sm text-zinc-700 font-medium">No global API keys</p>
+                <p className="text-[11px] text-zinc-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                  Add one without choosing a provider first, then assign xAI, Claude, or OpenAI when
+                  you are ready.
+                </p>
+                <button
+                  type="button"
+                  onClick={addGlobalApiKey}
+                  className="mt-4 h-9 px-4 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-500"
+                >
+                  Add API key
+                </button>
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {globalKeys.map((entry) => {
+                  const meta = providerMeta(entry.provider);
+                  const ready = Boolean(entry.provider && entry.key.trim());
+                  return (
+                    <li
+                      key={entry.id}
+                      className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3 space-y-2"
+                      style={
+                        meta
+                          ? { boxShadow: `inset 3px 0 0 ${meta.accent}` }
+                          : { boxShadow: 'inset 3px 0 0 #a1a1aa' }
+                      }
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          value={entry.name}
+                          onChange={(e) =>
+                            updateGlobalApiKey(entry.id, { name: e.target.value })
+                          }
+                          placeholder="Label (optional)"
+                          className="h-8 min-w-[8rem] flex-1 px-2.5 rounded-lg bg-white border border-zinc-200 text-xs text-zinc-800 focus:outline-none focus:border-violet-400"
+                        />
+                        <select
+                          value={entry.provider || ''}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            updateGlobalApiKey(entry.id, {
+                              provider:
+                                v === 'xai' || v === 'openai' || v === 'anthropic' ? v : null,
+                            });
+                          }}
+                          className="h-8 px-2 rounded-lg bg-white border border-zinc-200 text-xs text-zinc-800 focus:outline-none min-w-[10rem]"
+                        >
+                          <option value="">Provider: not set (agnostic)</option>
+                          {PROVIDER_KEY_OPTIONS.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.label}
+                            </option>
+                          ))}
+                        </select>
+                        <span
+                          className={`text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0 ${
+                            ready
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : entry.provider
+                                ? 'bg-amber-50 text-amber-800'
+                                : 'bg-zinc-200 text-zinc-600'
+                          }`}
+                        >
+                          {!entry.provider
+                            ? 'Agnostic'
+                            : ready
+                              ? 'Ready'
+                              : 'Needs key'}
+                        </span>
                         <button
                           type="button"
-                          onClick={() => clearProviderKey(p.id)}
-                          className="text-[10px] text-zinc-500 hover:text-red-400 shrink-0"
+                          onClick={() => removeGlobalApiKey(entry.id)}
+                          className="text-[10px] text-zinc-500 hover:text-red-500 shrink-0"
                         >
-                          Clear
+                          Remove
                         </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      </div>
+                      <label className="sr-only" htmlFor={`gkey-${entry.id}`}>
+                        API key secret
+                      </label>
+                      <input
+                        id={`gkey-${entry.id}`}
+                        type={revealKeys ? 'text' : 'password'}
+                        autoComplete="off"
+                        spellCheck={false}
+                        value={entry.key}
+                        onChange={(e) =>
+                          updateGlobalApiKey(entry.id, { key: e.target.value })
+                        }
+                        placeholder={
+                          meta?.placeholder || 'Paste API key… (provider optional for now)'
+                        }
+                        className="w-full h-9 px-3 rounded-lg bg-white border border-zinc-200 text-xs font-mono text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:border-violet-400"
+                      />
+                      <p className="text-[10px] text-zinc-500">
+                        {meta
+                          ? meta.hint
+                          : 'Choose a provider above to bind this key for mesh runs.'}
+                        {entry.key.trim()
+                          ? ` · ${entry.key.trim().length} chars stored`
+                          : ''}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
 
-            <p className="mt-3 text-[10px] text-zinc-500 leading-relaxed">
-              Per-agent model is set in the inspector under <span className="text-zinc-500">Provider</span>
-              . Run mesh uses the matching key above (or server env). Never commit keys.
+            <p className="text-[10px] text-zinc-500 leading-relaxed">
+              Mesh runs use a bound key for each agent’s provider. Unbound (agnostic) entries are
+              ignored until you select xAI, Claude, or OpenAI. Never commit keys.
             </p>
           </div>
         </div>
@@ -1712,31 +1869,36 @@ function Dashboard() {
                       Model providers
                     </p>
                     <p className="text-[10px] text-zinc-500 leading-relaxed mb-2">
-                      Available on each agent. Set BYOK keys from the header if needed.
+                      Global keys start agnostic; bind to xAI, Claude, or OpenAI when ready.
                     </p>
                     <ul className="space-y-1.5">
-                      {PROVIDER_KEY_META.map((p) => {
+                      {PROVIDER_KEY_OPTIONS.map((p) => {
                         const hasKey = Boolean(userKeys[p.id]?.trim());
                         return (
                           <li
                             key={p.id}
-                            className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-200 text-[11px] text-zinc-400 bg-zinc-50"
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-200 text-[11px] text-zinc-600 bg-zinc-50"
                           >
                             <span
                               className="h-1.5 w-1.5 rounded-full"
                               style={{
-                                backgroundColor: hasKey ? p.accent : '#52525b',
+                                backgroundColor: hasKey ? p.accent : '#a1a1aa',
                               }}
                             />
                             <span className="text-zinc-800 flex-1 truncate">{p.label}</span>
                             <span className="text-zinc-500">{MODELS[p.id].length} models</span>
                             <span className="text-[9px] text-zinc-500">
-                              {hasKey ? 'key set' : 'empty'}
+                              {hasKey ? 'key set' : 'no key'}
                             </span>
                           </li>
                         );
                       })}
                     </ul>
+                    <p className="text-[10px] text-zinc-500 mt-2">
+                      {globalKeys.filter((k) => !k.provider).length > 0
+                        ? `${globalKeys.filter((k) => !k.provider).length} agnostic key(s) not bound yet.`
+                        : 'Add keys from the header — no defaults.'}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -1744,14 +1906,14 @@ function Dashboard() {
                       setShowKeys(true);
                       setShowConnectors(false);
                     }}
-                    className="w-full h-8 rounded-lg border border-zinc-200 text-[11px] text-zinc-400 hover:text-zinc-800 hover:border-zinc-300"
+                    className="w-full h-8 rounded-lg border border-zinc-200 text-[11px] text-zinc-600 hover:text-zinc-900 hover:border-zinc-300"
                   >
-                    Open API keys panel
+                    Open global API keys
                   </button>
                   <button
                     type="button"
                     onClick={() => setLibraryTab('agents')}
-                    className="text-[10px] text-violet-400/90 hover:text-violet-300"
+                    className="text-[10px] text-violet-600 hover:text-violet-700"
                   >
                     ← Back to agents
                   </button>
