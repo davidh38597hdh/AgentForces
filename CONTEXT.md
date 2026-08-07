@@ -12,6 +12,7 @@
 
 Global queue + handles: `~/.grok/memory/MEMORY.md`  
 Paradigm: `~/.grok/memory/AGENT_NETWORK_PARADIGM.md`
+**Agent rules:** `AGENTS.md` (standing Grok Build playbook)
 
 ---
 

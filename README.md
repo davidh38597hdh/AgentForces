@@ -17,6 +17,8 @@ AgentForces unifies:
 
 See [docs/MERGE.md](docs/MERGE.md) for architecture and status.
 
+**Agent / contributor rules:** [AGENTS.md](AGENTS.md)
+
 ## Features
 
 - **Mesh run** — chief routes primary network; agents execute on a graph with bus hop logs  
