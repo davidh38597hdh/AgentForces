@@ -3,7 +3,9 @@
 **Updated:** 2026-08-07  
 **Status:** **active**  
 **Product name:** AgentForce  
-**Repo (GitHub):** [reachdavidhuynh/AgentxForce](https://github.com/reachdavidhuynh/AgentxForce)  
+**Repo (GitHub SOT):** [davidh38597hdh/AgentxForce](https://github.com/davidh38597hdh/AgentxForce)  
+**Remote:** `davidh` → `git@github.com:davidh38597hdh/AgentxForce.git` (tracks `main`)  
+**Upstream copy:** [reachdavidhuynh/AgentxForce](https://github.com/reachdavidhuynh/AgentxForce) (`origin`, not primary)  
 **Local path:** `~/code/AgentxForce`  
 **Live:** [agentxforce.com](https://agentxforce.com)  
 **Related (earlier cut):** [reachdavidhuynh/agentforge](https://github.com/reachdavidhuynh/agentforge) — not source of truth  
