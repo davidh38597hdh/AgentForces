@@ -9,8 +9,12 @@
 
 export const PROTOCOL_ID = 'AMEP/1' as const;
 export const CRYPTO_SUITE_ID = 'davidh-agent-net-crypto-v1' as const;
+
+/** Bus transport modes — in_memory today; amep_aead when SecureBus is wired */
+export type MeshTransport = 'in_memory' | 'amep_aead';
+
 /** Product surface: plaintext bus until SecureBus is wired server-side */
-export const MESH_TRANSPORT: 'in_memory' | 'amep_aead' = 'in_memory';
+export const MESH_TRANSPORT: MeshTransport = 'in_memory';
 
 export type MessageType = 'request' | 'response' | 'event' | 'handoff';
 
@@ -31,7 +35,7 @@ export type MeshEnvelope = {
 export type MeshSessionMeta = {
   protocol: typeof PROTOCOL_ID;
   cryptoSuite: typeof CRYPTO_SUITE_ID;
-  transport: typeof MESH_TRANSPORT;
+  transport: MeshTransport;
   sessionId: string;
   networkId: string;
   epochId: string;

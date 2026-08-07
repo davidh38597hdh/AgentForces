@@ -88,7 +88,7 @@ function topoSort(agents: MeshAgent[], edges: MeshEdge[]): MeshAgent[] {
 
   const indeg = new Map<string, number>();
   const outs = new Map<string, string[]>();
-  for (const id of ids) {
+  for (const id of Array.from(ids)) {
     indeg.set(id, 0);
     outs.set(id, []);
   }
@@ -197,7 +197,7 @@ export async function runMesh(input: MeshRunInput): Promise<MeshRunResult> {
   });
   const hops: MeshHopLog[] = [];
 
-  const networkIds = [...new Set(agents.map(networkOf))];
+  const networkIds = Array.from(new Set(agents.map(networkOf)));
   let primaryNetwork: string | null = null;
 
   if (input.chiefRoute !== false && networkIds.length > 0) {

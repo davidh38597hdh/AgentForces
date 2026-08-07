@@ -55,7 +55,7 @@ export class InMemoryMessageBus implements MessageBus {
     const targets =
       message.toNetwork && message.toNetwork !== '*'
         ? [message.toNetwork]
-        : [...this.queues.keys()].filter((id) => id !== message.fromNetwork);
+        : Array.from(this.queues.keys()).filter((id) => id !== message.fromNetwork);
 
     for (const target of targets) {
       const q = this.queues.get(target) || [];
