@@ -2,11 +2,10 @@ import Link from 'next/link';
 import { isGoogleAuthConfigured } from '@/lib/auth-mode';
 
 export default function Home() {
-  const googleEnabled = isGoogleAuthConfigured();
+  const googleReady = isGoogleAuthConfigured();
 
   return (
     <div className="min-h-screen af-page-bg text-[var(--foreground)] flex flex-col relative overflow-hidden">
-      {/* Animated purple / cyan glows */}
       <div className="af-orb af-orb-purple" aria-hidden />
       <div className="af-orb af-orb-cyan" aria-hidden />
       <div className="af-orb af-orb-purple-soft" aria-hidden />
@@ -15,14 +14,12 @@ export default function Home() {
         <div className="max-w-3xl mx-auto px-5 h-14 flex items-center justify-between">
           <span className="text-sm font-semibold tracking-wide text-zinc-100">AgentForces</span>
           <div className="flex items-center gap-5">
-            {googleEnabled && (
-              <Link
-                href="/login"
-                className="text-xs font-medium text-zinc-400 hover:text-[var(--purple-soft)] transition-colors"
-              >
-                Sign in
-              </Link>
-            )}
+            <Link
+              href="/login"
+              className="text-xs font-medium text-zinc-400 hover:text-[var(--purple-soft)] transition-colors"
+            >
+              Sign in
+            </Link>
             <Link
               href="/portal"
               className="text-xs font-medium text-zinc-300 hover:text-[var(--cyan-soft)] transition-colors"
@@ -34,7 +31,6 @@ export default function Home() {
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto px-5 pt-20 sm:pt-28 pb-16 w-full relative z-10 overflow-visible">
-        {/* Title outside card; extra space so gradient text is not clipped */}
         <div className="mb-6 sm:mb-8 overflow-visible">
           <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight af-title-gradient">
             AgentForces
@@ -49,20 +45,18 @@ export default function Home() {
             Multi-network agent meshes — chief routing, inter-network bus, your keys
           </p>
           <p className="text-sm text-zinc-500 mb-10 max-w-lg leading-relaxed">
-            {googleEnabled
-              ? 'Sign in with Google, pick a project in the portal, then open your mesh.'
-              : 'Pick a project in the portal, then open your mesh. Configure Google OAuth on Vercel to enable sign-in.'}
+            Sign in with Google, pick a project in the portal, then open your mesh.
+            {!googleReady && (
+              <span className="block mt-2 text-amber-500/80">
+                Tip: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on Vercel for live OAuth.
+              </span>
+            )}
           </p>
           <div className="flex flex-wrap gap-3">
-            {googleEnabled ? (
-              <Link href="/login" className="af-btn-primary">
-                Continue with Google
-              </Link>
-            ) : null}
-            <Link
-              href="/portal"
-              className={googleEnabled ? 'af-btn-ghost' : 'af-btn-primary'}
-            >
+            <Link href="/login" className="af-btn-primary">
+              Continue with Google
+            </Link>
+            <Link href="/portal" className="af-btn-ghost">
               Open portal
             </Link>
             <Link href="/dashboard" className="af-btn-ghost">

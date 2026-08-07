@@ -1,22 +1,19 @@
 /**
- * Auth mode — Google OAuth when env is configured.
- * - Configured: show Google button; gate portal/dashboard unless AUTH_REQUIRED=false
- * - Not configured: open guest access
+ * Auth mode — Google OAuth.
+ * Button is always shown in UI; provider registers when client id/secret exist.
  */
 
-/** True only when Google OAuth env is fully configured. */
+/** True when Google OAuth client credentials are set (AUTH_SECRET optional; has fallback). */
 export function isGoogleAuthConfigured(): boolean {
   return !!(
-    process.env.GOOGLE_CLIENT_ID?.trim() &&
-    process.env.GOOGLE_CLIENT_SECRET?.trim() &&
-    process.env.AUTH_SECRET?.trim()
+    process.env.GOOGLE_CLIENT_ID?.trim() && process.env.GOOGLE_CLIENT_SECRET?.trim()
   );
 }
 
 /**
- * Whether protected routes require a session.
- * Default: on when Google is configured.
- * Set AUTH_REQUIRED=false to allow guests even with Google env present.
+ * Whether portal/dashboard require a session.
+ * Default: on when Google client credentials exist.
+ * Set AUTH_REQUIRED=false to allow guests with Google still available.
  */
 export function isAuthRequired(): boolean {
   if (process.env.AUTH_REQUIRED === 'false' || process.env.AUTH_REQUIRED === '0') {
