@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { isGoogleAuthConfigured } from '@/lib/auth-mode';
+import { Logo } from '@/components/Logo';
 
 export default function Home() {
   const googleReady = isGoogleAuthConfigured();
@@ -12,7 +13,12 @@ export default function Home() {
 
       <header className="af-glass relative z-10">
         <div className="max-w-3xl mx-auto px-5 h-14 flex items-center justify-between">
-          <span className="text-sm font-semibold tracking-wide text-zinc-100">AgentForces</span>
+          <Link href="/" className="inline-flex items-center gap-2.5 group">
+            <Logo size={26} />
+            <span className="text-sm font-semibold tracking-wide text-zinc-100 group-hover:text-white transition-colors">
+              AgentForces
+            </span>
+          </Link>
           <div className="flex items-center gap-5">
             <Link
               href="/login"
@@ -31,7 +37,8 @@ export default function Home() {
       </header>
 
       <main className="flex-1 max-w-3xl mx-auto px-5 pt-20 sm:pt-28 pb-16 w-full relative z-10 overflow-visible">
-        <div className="mb-6 sm:mb-8 overflow-visible">
+        <div className="mb-6 sm:mb-8 overflow-visible flex items-center gap-4 sm:gap-5">
+          <Logo size={56} className="shrink-0" />
           <h1 className="text-5xl sm:text-6xl font-semibold tracking-tight af-title-gradient">
             AgentForces
           </h1>

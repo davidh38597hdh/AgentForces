@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { PROJECT_TEMPLATES } from '@/lib/projects';
+import { Logo } from '@/components/Logo';
 
 const ONBOARD_KEY = 'agentforces_onboarded_v1';
 const LAST_PROJECT_KEY = 'agentforces_last_project_v1';
@@ -38,7 +39,8 @@ export default function PortalPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-zinc-100">
       <header className="border-b border-zinc-900">
         <div className="max-w-3xl mx-auto px-5 h-12 flex items-center justify-between">
-          <Link href="/" className="text-sm font-medium text-zinc-500">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-zinc-200">
+            <Logo size={22} />
             AgentForces
           </Link>
           <div className="flex items-center gap-3 text-xs text-zinc-500">

@@ -21,6 +21,7 @@ import {
 } from '@xyflow/react';
 import AgentNode, { type AgentNodeData } from './AgentNode';
 import { buildProjectSeed } from '@/lib/seed-graph';
+import { Logo } from '@/components/Logo';
 
 type Provider = 'xai' | 'openai' | 'anthropic';
 type UserKeys = Partial<Record<Provider, string>>;
@@ -486,7 +487,8 @@ function Dashboard() {
       <header className="border-b border-zinc-900 shrink-0">
         <div className="px-4 h-12 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm font-medium text-zinc-300">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-zinc-200">
+              <Logo size={22} />
               AgentForces
             </Link>
             <span className="text-[11px] text-zinc-600 hidden sm:inline">

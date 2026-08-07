@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import { Logo } from '@/components/Logo';
 
 export function LoginForm({
   googleEnabled,
@@ -52,8 +53,9 @@ export function LoginForm({
       <div className="w-full max-w-sm af-card rounded-2xl px-6 py-8 relative z-10">
         <Link
           href="/"
-          className="text-sm font-semibold text-zinc-200 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2.5 text-sm font-semibold text-zinc-200 hover:text-white transition-colors"
         >
+          <Logo size={24} />
           AgentForces
         </Link>
         <h1 className="mt-8 text-2xl font-semibold tracking-tight af-title-gradient">Sign in</h1>
