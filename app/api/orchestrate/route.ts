@@ -13,8 +13,16 @@ type AgentNode = {
   system: string;
   provider?: ProviderId;
   model?: string;
+  company?: string;
+  team?: string;
+  exposed?: boolean;
 };
-type Edge = { from: string; to: string };
+
+type Edge = {
+  from: string;
+  to: string;
+  crossCompany?: boolean;
+};
 
 async function getModel(
   provider: ProviderId,
@@ -88,11 +96,21 @@ function topoSort(agents: AgentNode[], edges: Edge[]): AgentNode[] {
   return order.map((id) => byId.get(id)!).filter(Boolean);
 }
 
+/** For cross-company edges, only pass a partner-safe brief, not full internal text */
+function externalBrief(text: string, fromName: string, fromCompany: string): string {
+  const trimmed = text.trim();
+  const short = trimmed.length > 1200 ? `${trimmed.slice(0, 1200)}…` : trimmed;
+  return (
+    `### External interface brief from ${fromName} (${fromCompany})\n` +
+    `This content is shared across company boundaries. Treat as partner-facing only.\n\n${short}`
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth().catch(() => null);
     const body = await req.json();
-    const agents: AgentNode[] = (body.agents || []).slice(0, 6);
+    const agents: AgentNode[] = (body.agents || []).slice(0, 12);
     const edges: Edge[] = body.edges || [];
     const task: string = body.task || '';
     const contextText: string = body.contextText || '';
@@ -104,6 +122,19 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Agents and task are required' }, { status: 400 });
     }
 
+    // Enforce exposure on cross-company edges server-side
+    const byId = new Map(agents.map((a) => [a.id, a]));
+    const safeEdges = edges.filter((e) => {
+      const from = byId.get(e.from);
+      const to = byId.get(e.to);
+      if (!from || !to) return false;
+      const cross =
+        e.crossCompany ||
+        (!!from.company && !!to.company && from.company !== to.company);
+      if (cross && !(from.exposed && to.exposed)) return false;
+      return true;
+    });
+
     let urlBlock = '';
     if (urls.length) {
       const fetched = await Promise.all(
@@ -112,7 +143,7 @@ export async function POST(req: Request) {
       urlBlock = fetched.join('\n\n');
     }
 
-    const ordered = topoSort(agents, edges);
+    const ordered = topoSort(agents, safeEdges);
     const outputs = new Map<string, string>();
     const log: { id: string; agent: string; provider: string; model: string; output: string }[] = [];
     const userEmail = session?.user?.email || null;
@@ -127,18 +158,28 @@ export async function POST(req: Request) {
             ? 'claude-3-5-haiku-latest'
             : 'grok-3');
 
-      const parentIds = edges.filter((e) => e.to === agent.id).map((e) => e.from);
+      const inbound = safeEdges.filter((e) => e.to === agent.id);
       let upstream = '';
-      if (parentIds.length) {
-        upstream = parentIds
-          .map((pid) => {
-            const p = agents.find((a) => a.id === pid);
-            const t = outputs.get(pid);
-            return t ? `### From ${p?.name || pid}\n${t}` : '';
+
+      if (inbound.length) {
+        upstream = inbound
+          .map((e) => {
+            const parent = byId.get(e.from);
+            const text = outputs.get(e.from);
+            if (!parent || !text) return '';
+            const cross =
+              e.crossCompany ||
+              (!!parent.company &&
+                !!agent.company &&
+                parent.company !== agent.company);
+            if (cross) {
+              return externalBrief(text, parent.name, parent.company || 'Partner');
+            }
+            return `### From ${parent.name} (${parent.company || 'Internal'} / ${parent.team || 'Team'})\n${text}`;
           })
           .filter(Boolean)
           .join('\n\n');
-      } else if (outputs.size > 0 && edges.length === 0) {
+      } else if (outputs.size > 0 && safeEdges.length === 0) {
         const idx = ordered.findIndex((a) => a.id === agent.id);
         if (idx > 0) {
           const prev = ordered[idx - 1];
@@ -146,25 +187,46 @@ export async function POST(req: Request) {
         }
       }
 
+      const orgLine = [
+        agent.company && `Company: ${agent.company}`,
+        agent.team && `Team: ${agent.team}`,
+        agent.exposed && 'Role type: external interface (partner-facing)',
+      ]
+        .filter(Boolean)
+        .join(' · ');
+
+      let system = agent.system;
+      if (agent.exposed) {
+        system +=
+          '\n\nWhen your output may be shared with another company, include a short "External brief" section with only information safe for partners. Keep internal strategy and sensitive numbers out of that brief.';
+      }
+
       let prompt = `Original task:\n${task}\n\n`;
+      if (orgLine) prompt += `Your org context: ${orgLine}\n\n`;
       if (contextText.trim()) prompt += `Shared context:\n${contextText.trim()}\n\n`;
       if (urlBlock) prompt += `Fetched web content:\n${urlBlock}\n\n`;
-      if (upstream) prompt += `Upstream agent outputs:\n${upstream}\n\n`;
-      prompt += `Your role: ${agent.name}.\nProvide your contribution based on the task and any upstream outputs. Be concise and useful.`;
+      if (upstream) prompt += `Upstream inputs:\n${upstream}\n\n`;
+      prompt += `Your role: ${agent.name}.\nProvide your contribution. Be concise and useful.`;
 
       const model = await getModel(provider, modelId, userKeys, userEmail);
-      const result = await generateText({ model, system: agent.system, prompt });
+      const result = await generateText({ model, system, prompt });
 
       outputs.set(agent.id, result.text);
-      log.push({ id: agent.id, agent: agent.name, provider, model: modelId, output: result.text });
+      log.push({
+        id: agent.id,
+        agent: `${agent.name}${agent.company ? ` · ${agent.company}` : ''}`,
+        provider,
+        model: modelId,
+        output: result.text,
+      });
     }
 
     const sinkNodes =
-      edges.length > 0
-        ? ordered.filter((a) => !edges.some((e) => e.from === a.id))
+      safeEdges.length > 0
+        ? ordered.filter((a) => !safeEdges.some((e) => e.from === a.id))
         : ordered.slice(-1);
     const outcome =
-      sinkNodes.map((a) => `## ${a.name}\n${outputs.get(a.id) || ''}`).join('\n\n') ||
+      sinkNodes.map((a) => `## ${a.name}${a.company ? ` (${a.company})` : ''}\n${outputs.get(a.id) || ''}`).join('\n\n') ||
       log[log.length - 1]?.output ||
       '';
 

@@ -11,6 +11,7 @@ import {
   addEdge,
   useNodesState,
   useEdgesState,
+  ConnectionMode,
   type Connection,
   type Node,
   type Edge,
@@ -25,54 +26,87 @@ type LogEntry = { id: string; agent: string; provider: string; model: string; ou
 
 const KEYS_STORAGE = 'agentforce_user_keys_v1';
 
+const COMPANIES = [
+  { id: 'acme', name: 'Acme Corp', color: '#3b82f6' },
+  { id: 'nova', name: 'Nova Labs', color: '#a855f7' },
+  { id: 'orbit', name: 'Orbit Systems', color: '#14b8a6' },
+];
+
 const ROLE_PRESETS: {
   id: string;
   name: string;
   system: string;
   color: string;
   team: string;
+  /** Typical external interface roles */
+  defaultExposed: boolean;
 }[] = [
+  {
+    id: 'ceo',
+    name: 'CEO',
+    system:
+      'You are the CEO. Set direction, approve external commitments, and speak at the company interface. Be decisive and concise.',
+    color: '#f59e0b',
+    team: 'Executive',
+    defaultExposed: true,
+  },
+  {
+    id: 'product',
+    name: 'Head of Product',
+    system:
+      'You are Head of Product. Own roadmap and partner-facing product decisions. Share only what partners need to collaborate.',
+    color: '#3b82f6',
+    team: 'Product',
+    defaultExposed: true,
+  },
+  {
+    id: 'finance_ops',
+    name: 'Financial Operations',
+    system:
+      'You are Financial Operations. Handle budgets, invoices, and partner financial terms. Keep internal numbers private unless authorized.',
+    color: '#eab308',
+    team: 'Finance',
+    defaultExposed: true,
+  },
   {
     id: 'research',
     name: 'Researcher',
-    system: 'You are a research agent. Gather facts, structure findings, and surface important insights.',
-    color: '#3b82f6',
+    system: 'You are a research agent. Gather facts and surface insights for your internal team.',
+    color: '#60a5fa',
     team: 'Intel',
+    defaultExposed: false,
   },
   {
     id: 'coding',
     name: 'Coder',
-    system: 'You are a senior software engineer. Write clear code and practical implementation steps.',
+    system: 'You are a software engineer. Produce implementation plans and code for internal use.',
     color: '#22c55e',
-    team: 'Build',
-  },
-  {
-    id: 'finance',
-    name: 'Financial Analyst',
-    system: 'You are a financial analyst. Focus on numbers, assumptions, risks, and realistic projections.',
-    color: '#eab308',
-    team: 'Finance',
+    team: 'Engineering',
+    defaultExposed: false,
   },
   {
     id: 'analyst',
     name: 'Analyst',
-    system: 'You are an analytical agent. Extract patterns and concrete next steps.',
+    system: 'You are an internal analyst. Extract patterns and next steps for your company only.',
     color: '#a855f7',
     team: 'Intel',
+    defaultExposed: false,
   },
   {
     id: 'writer',
     name: 'Writer',
-    system: 'You are a clear writer. Turn analysis into structured readable content.',
+    system: 'You are a writer. Produce internal docs and, when exposed, partner-safe briefs.',
     color: '#ec4899',
     team: 'Content',
+    defaultExposed: false,
   },
   {
     id: 'critic',
     name: 'Critic',
-    system: 'You are a sharp critic. Challenge assumptions and suggest stronger alternatives.',
+    system: 'You are an internal critic. Challenge assumptions before anything is shared externally.',
     color: '#f97316',
     team: 'QA',
+    defaultExposed: false,
   },
 ];
 
@@ -93,29 +127,62 @@ const MODELS: Record<Provider, { id: string; label: string }[]> = {
 
 const nodeTypes = { agent: AgentNode };
 
-function makeNode(preset: (typeof ROLE_PRESETS)[0], index: number): Node {
+function makeNode(
+  preset: (typeof ROLE_PRESETS)[0],
+  company: (typeof COMPANIES)[0],
+  index: number
+): Node {
   const id = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 6)}`;
+  const col = COMPANIES.findIndex((c) => c.id === company.id);
   return {
     id,
     type: 'agent',
-    position: { x: 80 + (index % 3) * 260, y: 80 + Math.floor(index / 3) * 140 },
+    position: {
+      x: 60 + col * 320 + (index % 2) * 40,
+      y: 60 + Math.floor(index / 1) * 130 + (index % 3) * 20,
+    },
     data: {
       name: preset.name,
       system: preset.system,
       provider: 'xai' as Provider,
       model: 'grok-3',
       role: preset.id,
-      color: preset.color,
+      color: company.color,
       team: preset.team,
+      company: company.name,
+      exposed: preset.defaultExposed,
     } satisfies AgentNodeData,
+  };
+}
+
+function edgeStyle(crossCompany: boolean): Partial<Edge> {
+  if (crossCompany) {
+    return {
+      type: 'smoothstep',
+      animated: true,
+      style: { stroke: '#f59e0b', strokeWidth: 2, strokeDasharray: '6 4' },
+      markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#f59e0b' },
+      label: 'external',
+      labelStyle: { fill: '#f59e0b', fontSize: 10 },
+      labelBgStyle: { fill: '#18181b' },
+    };
+  }
+  return {
+    type: 'smoothstep',
+    animated: false,
+    style: { stroke: '#52525b', strokeWidth: 1.5 },
+    markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#71717a' },
   };
 }
 
 export default function Dashboard() {
   const { data: session } = useSession();
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([makeNode(ROLE_PRESETS[0], 0)]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([
+    makeNode(ROLE_PRESETS[3], COMPANIES[0], 0),
+  ]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [addCompanyId, setAddCompanyId] = useState(COMPANIES[0].id);
   const [task, setTask] = useState('');
   const [context, setContext] = useState('');
   const [urls, setUrls] = useState('');
@@ -128,6 +195,7 @@ export default function Dashboard() {
   const [outcome, setOutcome] = useState('');
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
+  const [connectHint, setConnectHint] = useState('');
 
   useEffect(() => {
     try {
@@ -148,37 +216,119 @@ export default function Dashboard() {
     [nodes, selectedId]
   );
 
+  const getData = useCallback(
+    (id: string) => nodes.find((n) => n.id === id)?.data as AgentNodeData | undefined,
+    [nodes]
+  );
+
+  /** Allow many edges from one node; block cross-company unless both are exposed */
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      const source = connection.source;
+      const target = connection.target;
+      if (!source || !target || source === target) return false;
+
+      const s = getData(source);
+      const t = getData(target);
+      if (!s || !t) return false;
+
+      const cross = s.company !== t.company;
+      if (cross && !(s.exposed && t.exposed)) {
+        setConnectHint(
+          'Cross-company links require both nodes to be External interfaces (Ext).'
+        );
+        return false;
+      }
+      setConnectHint('');
+      return true;
+    },
+    [getData]
+  );
+
   const onConnect = useCallback(
     (connection: Connection) => {
-      setEdges((eds) =>
-        addEdge(
+      if (!isValidConnection(connection)) return;
+
+      const s = getData(connection.source!);
+      const t = getData(connection.target!);
+      const cross = !!(s && t && s.company !== t.company);
+
+      setEdges((eds) => {
+        // Allow multiple connections; skip exact duplicate only
+        const dup = eds.some(
+          (e) => e.source === connection.source && e.target === connection.target
+        );
+        if (dup) return eds;
+
+        return addEdge(
           {
             ...connection,
-            type: 'smoothstep',
-            animated: true,
-            markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#71717a' },
-            style: { stroke: '#52525b', strokeWidth: 1.5 },
+            id: `e-${connection.source}-${connection.target}-${eds.length}`,
+            data: { crossCompany: cross },
+            ...edgeStyle(cross),
           },
           eds
-        )
-      );
+        );
+      });
     },
-    [setEdges]
+    [getData, isValidConnection, setEdges]
   );
 
   const addAgent = (preset?: (typeof ROLE_PRESETS)[0]) => {
-    if (nodes.length >= 8) return;
-    const p = preset || ROLE_PRESETS[0];
-    setNodes((nds) => [...nds, makeNode(p, nds.length)]);
+    if (nodes.length >= 12) return;
+    const company = COMPANIES.find((c) => c.id === addCompanyId) || COMPANIES[0];
+    const p = preset || ROLE_PRESETS[3];
+    setNodes((nds) => [...nds, makeNode(p, company, nds.length)]);
+  };
+
+  const seedTwoCompanies = () => {
+    const a = COMPANIES[0];
+    const b = COMPANIES[1];
+    const product = ROLE_PRESETS.find((r) => r.id === 'product')!;
+    const finance = ROLE_PRESETS.find((r) => r.id === 'finance_ops')!;
+    const research = ROLE_PRESETS.find((r) => r.id === 'research')!;
+    const coder = ROLE_PRESETS.find((r) => r.id === 'coding')!;
+
+    const n1 = makeNode(research, a, 0);
+    n1.position = { x: 40, y: 80 };
+    const n2 = makeNode(product, a, 1);
+    n2.position = { x: 40, y: 240 };
+    const n3 = makeNode(finance, b, 2);
+    n3.position = { x: 420, y: 240 };
+    const n4 = makeNode(coder, b, 3);
+    n4.position = { x: 420, y: 80 };
+
+    setNodes([n1, n2, n3, n4]);
+    setEdges([
+      {
+        id: 'e-internal-a',
+        source: n1.id,
+        target: n2.id,
+        data: { crossCompany: false },
+        ...edgeStyle(false),
+      },
+      {
+        id: 'e-cross',
+        source: n2.id,
+        target: n3.id,
+        data: { crossCompany: true },
+        ...edgeStyle(true),
+      },
+      {
+        id: 'e-internal-b',
+        source: n3.id,
+        target: n4.id,
+        data: { crossCompany: false },
+        ...edgeStyle(false),
+      },
+    ]);
   };
 
   const updateSelected = (patch: Partial<AgentNodeData>) => {
     if (!selectedId) return;
     setNodes((nds) =>
       nds.map((n) =>
-        n.id === selectedId
-          ? { ...n, data: { ...(n.data as AgentNodeData), ...patch } }
-          : n
+        n.id === selectedId ? { ...n, data: { ...(n.data as AgentNodeData), ...patch } } : n
       )
     );
   };
@@ -188,23 +338,6 @@ export default function Dashboard() {
     setNodes((nds) => nds.filter((n) => n.id !== selectedId));
     setEdges((eds) => eds.filter((e) => e.source !== selectedId && e.target !== selectedId));
     setSelectedId(null);
-  };
-
-  const chainLinear = () => {
-    const ordered = [...nodes].sort((a, b) => a.position.x - b.position.x || a.position.y - b.position.y);
-    const next: Edge[] = [];
-    for (let i = 0; i < ordered.length - 1; i++) {
-      next.push({
-        id: `e-${ordered[i].id}-${ordered[i + 1].id}`,
-        source: ordered[i].id,
-        target: ordered[i + 1].id,
-        type: 'smoothstep',
-        animated: true,
-        markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: '#71717a' },
-        style: { stroke: '#52525b', strokeWidth: 1.5 },
-      });
-    }
-    setEdges(next);
   };
 
   const run = async () => {
@@ -222,9 +355,17 @@ export default function Dashboard() {
           system: d.system,
           provider: d.provider,
           model: d.model,
+          company: d.company,
+          team: d.team,
+          exposed: d.exposed,
         };
       });
-      const graphEdges = edges.map((e) => ({ from: e.source, to: e.target }));
+
+      const graphEdges = edges.map((e) => ({
+        from: e.source,
+        to: e.target,
+        crossCompany: !!(e.data as { crossCompany?: boolean })?.crossCompany,
+      }));
 
       const res = await fetch('/api/orchestrate', {
         method: 'POST',
@@ -260,12 +401,6 @@ export default function Dashboard() {
     }
   };
 
-  const teamLegend = useMemo(() => {
-    const map = new Map<string, string>();
-    ROLE_PRESETS.forEach((r) => map.set(r.team, r.color));
-    return Array.from(map.entries());
-  }, []);
-
   return (
     <div className="h-screen flex flex-col bg-[#0a0a0a] text-zinc-100">
       <header className="border-b border-zinc-900 shrink-0">
@@ -274,7 +409,9 @@ export default function Dashboard() {
             <Link href="/" className="text-sm font-medium text-zinc-300">
               AgentForce
             </Link>
-            <span className="text-[11px] text-zinc-600 hidden sm:inline">2D team graph</span>
+            <span className="text-[11px] text-zinc-600 hidden sm:inline">
+              Multi-company teams · fan-out links
+            </span>
           </div>
           <div className="flex items-center gap-3 text-xs text-zinc-500">
             <button type="button" onClick={() => setShowKeys((s) => !s)} className="hover:text-zinc-300">
@@ -306,7 +443,7 @@ export default function Dashboard() {
                 value={userKeys[p] || ''}
                 onChange={(e) => saveKeys({ ...userKeys, [p]: e.target.value })}
                 placeholder={`${p} api key`}
-                className="h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm focus:outline-none focus:border-zinc-600"
+                className="h-9 px-3 rounded-lg bg-zinc-950 border border-zinc-800 text-sm focus:outline-none"
               />
             ))}
           </div>
@@ -314,7 +451,6 @@ export default function Dashboard() {
       )}
 
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-        {/* Canvas */}
         <div className="flex-1 min-h-[320px] relative border-b lg:border-b-0 lg:border-r border-zinc-900">
           <ReactFlow
             nodes={nodes}
@@ -322,6 +458,8 @@ export default function Dashboard() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            isValidConnection={isValidConnection}
+            connectionMode={ConnectionMode.Loose}
             onNodeClick={(_, n) => setSelectedId(n.id)}
             onPaneClick={() => setSelectedId(null)}
             nodeTypes={nodeTypes}
@@ -337,57 +475,75 @@ export default function Dashboard() {
             />
           </ReactFlow>
 
-          {/* Canvas toolbar */}
           <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 pointer-events-none">
-            <div className="pointer-events-auto flex flex-wrap gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/90 p-1.5 backdrop-blur">
-              {ROLE_PRESETS.map((r) => (
+            <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/90 p-1.5 backdrop-blur">
+              <select
+                value={addCompanyId}
+                onChange={(e) => setAddCompanyId(e.target.value)}
+                className="text-[11px] bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1"
+              >
+                {COMPANIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {ROLE_PRESETS.slice(0, 6).map((r) => (
                 <button
                   key={r.id}
                   type="button"
                   onClick={() => addAgent(r)}
-                  className="text-[11px] px-2 py-1 rounded-md border border-zinc-800 hover:border-zinc-600 text-zinc-400 hover:text-zinc-200"
-                  style={{ borderLeftColor: r.color, borderLeftWidth: 2 }}
+                  className="text-[11px] px-2 py-1 rounded-md border border-zinc-800 text-zinc-400 hover:text-zinc-200"
                 >
                   + {r.name}
                 </button>
               ))}
               <button
                 type="button"
-                onClick={chainLinear}
-                className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
+                onClick={seedTwoCompanies}
+                className="text-[11px] px-2 py-1 rounded-md text-amber-500/90 hover:text-amber-400"
               >
-                Chain
+                Demo: 2 companies
               </button>
               <button
                 type="button"
                 onClick={() => setEdges([])}
-                className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
+                className="text-[11px] px-2 py-1 rounded-md text-zinc-500"
               >
                 Clear links
               </button>
             </div>
           </div>
 
-          {/* Team legend */}
-          <div className="absolute bottom-3 left-3 flex flex-wrap gap-2 rounded-lg border border-zinc-800 bg-zinc-950/90 px-2.5 py-1.5 backdrop-blur">
-            {teamLegend.map(([team, color]) => (
-              <span key={team} className="flex items-center gap-1.5 text-[10px] text-zinc-500">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                {team}
+          <div className="absolute bottom-3 left-3 space-y-1">
+            <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-800 bg-zinc-950/90 px-2.5 py-1.5">
+              {COMPANIES.map((c) => (
+                <span key={c.id} className="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
+                  {c.name}
+                </span>
+              ))}
+              <span className="flex items-center gap-1.5 text-[10px] text-amber-500/80">
+                <span className="h-0.5 w-4 border-t border-dashed border-amber-500" />
+                External link
               </span>
-            ))}
+            </div>
+            {connectHint && (
+              <p className="text-[10px] text-amber-400 bg-zinc-950/90 border border-zinc-800 rounded px-2 py-1">
+                {connectHint}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Side panel */}
         <aside className="w-full lg:w-[340px] shrink-0 flex flex-col max-h-[50vh] lg:max-h-none overflow-y-auto">
           <div className="p-4 space-y-4 border-b border-zinc-900">
             <textarea
               value={task}
               onChange={(e) => setTask(e.target.value)}
               rows={3}
-              placeholder="What should the team do?"
-              className="w-full bg-transparent text-sm border border-zinc-800 rounded-lg px-3 py-2 focus:outline-none focus:border-zinc-600 resize-none"
+              placeholder="What should the companies / teams do?"
+              className="w-full bg-transparent text-sm border border-zinc-800 rounded-lg px-3 py-2 focus:outline-none resize-none"
             />
             <details>
               <summary className="text-[11px] text-zinc-600 cursor-pointer list-none">+ Context & connectors</summary>
@@ -403,7 +559,7 @@ export default function Dashboard() {
                   value={urls}
                   onChange={(e) => setUrls(e.target.value)}
                   rows={2}
-                  placeholder="URLs (one per line)"
+                  placeholder="URLs"
                   className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
                 />
                 <label className="flex items-center gap-2 text-[11px] text-zinc-500">
@@ -417,13 +573,13 @@ export default function Dashboard() {
                 <input
                   value={slackWebhook}
                   onChange={(e) => setSlackWebhook(e.target.value)}
-                  placeholder="Slack webhook URL"
+                  placeholder="Slack webhook"
                   className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
                 />
                 <input
                   value={genericWebhook}
                   onChange={(e) => setGenericWebhook(e.target.value)}
-                  placeholder="Zapier / generic webhook"
+                  placeholder="Zapier webhook"
                   className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
                 />
               </div>
@@ -432,19 +588,22 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={run}
-              disabled={running || !task.trim() || nodes.length === 0}
+              disabled={running || !task.trim()}
               className="w-full h-10 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-30"
             >
-              {running ? 'Running graph…' : 'Run team'}
+              {running ? 'Running…' : 'Run graph'}
             </button>
             {error && <p className="text-xs text-red-400">{error}</p>}
+            <p className="text-[10px] text-zinc-600">
+              One node can link to many. Cross-company links (dashed amber) only between{' '}
+              <span className="text-amber-500">Ext</span> interfaces — e.g. Head of Product ↔ Financial Ops.
+            </p>
           </div>
 
-          {/* Selected node editor */}
           {selected && (
             <div className="p-4 space-y-3 border-b border-zinc-900">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Selected agent</h3>
+                <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Selected</h3>
                 <button type="button" onClick={removeSelected} className="text-[11px] text-zinc-600 hover:text-red-400">
                   Remove
                 </button>
@@ -455,6 +614,23 @@ export default function Dashboard() {
                 className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-sm border border-zinc-800 focus:outline-none"
               />
               <select
+                value={(selected.data as AgentNodeData).company}
+                onChange={(e) => {
+                  const c = COMPANIES.find((x) => x.name === e.target.value);
+                  updateSelected({
+                    company: e.target.value,
+                    color: c?.color || (selected.data as AgentNodeData).color,
+                  });
+                }}
+                className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
+              >
+                {COMPANIES.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <select
                 value={(selected.data as AgentNodeData).role}
                 onChange={(e) => {
                   const preset = ROLE_PRESETS.find((r) => r.id === e.target.value);
@@ -463,8 +639,8 @@ export default function Dashboard() {
                       role: preset.id,
                       name: preset.name,
                       system: preset.system,
-                      color: preset.color,
                       team: preset.team,
+                      exposed: preset.defaultExposed,
                     });
                   }
                 }}
@@ -472,10 +648,19 @@ export default function Dashboard() {
               >
                 {ROLE_PRESETS.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.name} ({r.team})
+                    {r.name} · {r.team}
+                    {r.defaultExposed ? ' · Ext' : ''}
                   </option>
                 ))}
               </select>
+              <label className="flex items-center gap-2 text-xs text-zinc-400">
+                <input
+                  type="checkbox"
+                  checked={(selected.data as AgentNodeData).exposed}
+                  onChange={(e) => updateSelected({ exposed: e.target.checked })}
+                />
+                External interface (may link across companies)
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 <select
                   value={(selected.data as AgentNodeData).provider}
@@ -507,19 +692,15 @@ export default function Dashboard() {
                 rows={4}
                 className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none text-zinc-400"
               />
-              <p className="text-[10px] text-zinc-600">
-                Drag nodes on the canvas. Connect by dragging from the right handle to another node&apos;s left handle.
-              </p>
             </div>
           )}
 
-          {/* Results */}
           {(outcome || log.length > 0) && (
             <div className="p-4 space-y-4 flex-1">
               {outcome && (
                 <div>
                   <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Outcome</h3>
-                  <p className="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed">{outcome}</p>
+                  <p className="text-xs text-zinc-300 whitespace-pre-wrap">{outcome}</p>
                 </div>
               )}
               {log.map((entry, i) => (
