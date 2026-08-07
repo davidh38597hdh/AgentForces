@@ -23,7 +23,7 @@ Copy [`.env.example`](../.env.example) and set at least:
 Google OAuth authorized redirect URIs (examples):
 
 ```
-https://agentforces.com/api/auth/callback/google
+https://agentxforces.com/api/auth/callback/google
 https://YOURAPP.fly.dev/api/auth/callback/google
 http://localhost:3000/api/auth/callback/google
 ```
@@ -38,7 +38,7 @@ Next.js is built with **`output: 'standalone'`** so the same image runs on Fly, 
 
 1. Import `davidh38597hdh/AgentForces` (or your fork).
 2. Set env vars in the Vercel project.
-3. Deploy. Domain: [agentforces.com](https://agentforces.com).
+3. Deploy. Domain: [agentxforces.com](https://agentxforces.com).
 
 Optional: `DEPLOY_TARGET=vercel` (auto-detected via `VERCEL=1`).
 

@@ -7,7 +7,7 @@
 **Remote:** `davidh` → `git@github.com:davidh38597hdh/AgentForces.git` (tracks `main`)  
 **Upstream copy:** [reachdavidhuynh/AgentForces](https://github.com/reachdavidhuynh/AgentForces) (`origin`, not primary)  
 **Local path:** `~/code/AgentForces`  
-**Live:** [agentforces.com](https://agentforces.com)  
+**Live:** [agentxforces.com](https://agentxforces.com)  
 **Related (earlier cut):** [reachdavidhuynh/agentforge](https://github.com/reachdavidhuynh/agentforge) — not source of truth  
 
 Global queue + handles: `~/.grok/memory/MEMORY.md`  

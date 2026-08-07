@@ -49,7 +49,7 @@ function LoginForm() {
         <p className="mt-8 text-[11px] text-zinc-600 leading-relaxed">
           Requires <code className="text-zinc-500">GOOGLE_CLIENT_ID</code> and{' '}
           <code className="text-zinc-500">GOOGLE_CLIENT_SECRET</code> on the server. Redirect URI:{' '}
-          <code className="text-zinc-500">https://agentforces.com/api/auth/callback/google</code>
+          <code className="text-zinc-500">https://agentxforces.com/api/auth/callback/google</code>
         </p>
       </div>
     </div>

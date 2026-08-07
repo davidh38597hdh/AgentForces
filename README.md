@@ -2,7 +2,7 @@
 
 Multi-agent **mesh** orchestration — graph UX, per-agent models, BYOK, and Orchestrate + AMEP/1 concepts.
 
-**Live:** [agentforces.com](https://agentforces.com)  
+**Live:** [agentxforces.com](https://agentxforces.com)  
 **Repo:** [davidh38597hdh/AgentForces](https://github.com/davidh38597hdh/AgentForces)
 
 ## Product merge
@@ -78,7 +78,7 @@ fly deploy
 
 Full guide: [docs/DEPLOY.md](docs/DEPLOY.md).
 
-**Primary domain:** [agentforces.com](https://agentforces.com)
+**Primary domain:** [agentxforces.com](https://agentxforces.com)
 
 ## Related (not product SOT)
 

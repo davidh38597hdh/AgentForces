@@ -1,7 +1,7 @@
 # Merge: Orchestrate / amep-network → AgentForces
 
 **Date:** 2026-08-07  
-**Product surface:** AgentForces (`davidh38597hdh/AgentForces`, agentforces.com)  
+**Product surface:** AgentForces (`davidh38597hdh/AgentForces`, agentxforces.com)  
 **Concept sources:**
 - Orchestrate / Multi-Agent-System — multi-network teams + MessageBus + chief routing  
 - amep-network — AMEP/1 protocol labels, SecureBus shape, cells, epoch sessions, sandboxes  
