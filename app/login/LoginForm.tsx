@@ -15,29 +15,33 @@ export function LoginForm({
 }) {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/portal';
+  const errorParam = searchParams.get('error');
   const safeCallback = callbackUrl.startsWith('/') ? callbackUrl : '/portal';
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    if (!errorParam) return '';
+    if (errorParam === 'Configuration') {
+      return 'Auth configuration error. On Vercel set AUTH_URL to https://www.agentxforces.com (with www) and ensure GOOGLE_CLIENT_ID / SECRET / AUTH_SECRET are set, then redeploy.';
+    }
+    if (errorParam === 'OAuthCallback' || errorParam === 'Callback') {
+      return 'OAuth callback failed. Register https://www.agentxforces.com/api/auth/callback/google in Google Cloud Console (and match AUTH_URL host).';
+    }
+    if (errorParam === 'AccessDenied') {
+      return 'Access denied. If the Google app is in Testing mode, add your account as a Test user.';
+    }
+    return `Sign-in error: ${errorParam}`;
+  });
 
   const onGoogle = async () => {
     setError('');
     setPending(true);
     try {
-      // Always attempt; NextAuth errors if provider missing
-      const res = await signIn('google', { callbackUrl: safeCallback, redirect: true });
-      if (res?.error) {
-        setError(
-          googleEnabled
-            ? `Sign-in failed: ${res.error}`
-            : 'Google OAuth is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on Vercel, then redeploy.'
-        );
-        setPending(false);
-      }
+      await signIn('google', { callbackUrl: safeCallback, redirect: true });
     } catch {
       setError(
         googleEnabled
           ? 'Could not start Google sign-in. Try again.'
-          : 'Google OAuth is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on Vercel, then redeploy.'
+          : 'Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on Vercel, then redeploy.'
       );
       setPending(false);
     }
@@ -63,13 +67,11 @@ export function LoginForm({
           Continue with Google to open your portal and mesh projects.
           {!googleEnabled && (
             <span className="block mt-2 text-amber-500/90">
-              Server is missing Google env vars — button is visible but sign-in will fail until
-              configured.
+              Server is missing Google env vars — sign-in will fail until configured.
             </span>
           )}
         </p>
 
-        {/* Always show Google button */}
         <button
           type="button"
           onClick={onGoogle}
@@ -97,19 +99,19 @@ export function LoginForm({
           {pending ? 'Redirecting…' : 'Continue with Google'}
         </button>
 
-        {/* Guest only in non-production when auth is not required */}
         {!authRequired && (
           <Link href={safeCallback} className="af-btn-ghost w-full mt-3">
             Continue as guest (local/dev only)
           </Link>
         )}
 
-        {error && <p className="mt-4 text-xs text-red-400">{error}</p>}
+        {error && <p className="mt-4 text-xs text-red-400 whitespace-pre-wrap">{error}</p>}
 
         <p className="mt-8 text-[11px] text-zinc-600 leading-relaxed">
-          Redirect URI in Google Console:{' '}
-          <code className="text-zinc-400">
-            https://agentxforces.com/api/auth/callback/google
+          Google Console redirect URI (must match AUTH_URL host):
+          <br />
+          <code className="text-zinc-400 break-all">
+            https://www.agentxforces.com/api/auth/callback/google
           </code>
         </p>
       </div>

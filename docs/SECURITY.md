@@ -53,12 +53,20 @@ UI may show **AMEP/1** protocol labels and epoch ids; transport remains **`in_me
 | `AUTH_SECRET` | Strong random; **required** |
 | `GOOGLE_CLIENT_ID` | Not `GOOGLE_CLIENT` |
 | `GOOGLE_CLIENT_SECRET` | From Google Cloud |
-| `AUTH_URL` | `https://agentxforces.com` |
-| `NEXT_PUBLIC_APP_URL` | `https://agentxforces.com` |
+| `AUTH_URL` | **`https://www.agentxforces.com`** (site redirects apex → www; host must match) |
+| `NEXT_PUBLIC_APP_URL` | **`https://www.agentxforces.com`** |
 | `AUTH_TRUST_HOST` | `true` |
 | `AUTH_REQUIRED` | Optional in prod (auth forced anyway) |
 
-Google redirect: `https://agentxforces.com/api/auth/callback/google`
+Google redirect (register **both** if unsure):
+
+```
+https://www.agentxforces.com/api/auth/callback/google
+https://agentxforces.com/api/auth/callback/google
+```
+
+**OAuth “Server error” / Configuration:** almost always AUTH_URL host ≠ browser host (www vs apex).
+Use **www** everywhere for this deployment.
 
 ---
 

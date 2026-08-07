@@ -14,7 +14,7 @@ Copy [`.env.example`](../.env.example) and set at least:
 
 | Variable | Notes |
 |----------|--------|
-| `AUTH_URL` / `NEXT_PUBLIC_APP_URL` | `https://agentxforces.com` (no trailing slash) |
+| `AUTH_URL` / `NEXT_PUBLIC_APP_URL` | **`https://www.agentxforces.com`** (apex redirects to www — must match) |
 | `AUTH_TRUST_HOST=true` | **Required** on non-Vercel / reverse proxies |
 | `AUTH_SECRET` | **Required in production** |
 | `GOOGLE_CLIENT_ID` | **Required in production** (not `GOOGLE_CLIENT`) |

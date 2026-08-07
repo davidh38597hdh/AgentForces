@@ -6,7 +6,7 @@ import {
   isProduction,
 } from '@/lib/auth-mode';
 
-// Fail closed on production misconfig at module load
+// Fail closed on production misconfig at module load (log only — don't crash cold start)
 try {
   assertProductionAuthConfig();
 } catch (e) {
@@ -34,34 +34,46 @@ if (googleId && googleSecret) {
   );
 }
 
-const useSecureCookies = isProduction();
+/**
+ * IMPORTANT: AUTH_URL must match the browser origin users actually use.
+ * This site redirects apex → www, so production should be:
+ *   AUTH_URL=https://www.agentxforces.com
+ *   NEXT_PUBLIC_APP_URL=https://www.agentxforces.com
+ * Google Console redirect URI must match:
+ *   https://www.agentxforces.com/api/auth/callback/google
+ */
+if (isProduction() && process.env.AUTH_URL) {
+  try {
+    const u = new URL(process.env.AUTH_URL);
+    if (u.hostname === 'agentxforces.com') {
+      console.warn(
+        'AgentForces: AUTH_URL uses apex host but traffic redirects to www. ' +
+          'Set AUTH_URL=https://www.agentxforces.com and register that callback in Google Console.'
+      );
+    }
+  } catch {
+    /* ignore bad URL */
+  }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
+  // Always provide a secret string — Auth.js throws Configuration if missing
   secret:
     authSecret ||
     (isProduction()
-      ? undefined // NextAuth will error without secret in prod — intentional
+      ? // Still set something so handlers load; assertProductionAuthConfig logs the real issue
+        process.env.AUTH_SECRET || 'MISSING_AUTH_SECRET_SET_IN_VERCEL'
       : 'agentforces-dev-open-mode-not-for-production'),
   session: {
     strategy: 'jwt',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 7,
   },
-  cookies: useSecureCookies
-    ? {
-        sessionToken: {
-          name: `__Secure-authjs.session-token`,
-          options: {
-            httpOnly: true,
-            sameSite: 'lax',
-            path: '/',
-            secure: true,
-          },
-        },
-      }
-    : undefined,
+  // Let Auth.js manage cookie names (__Secure- prefix on HTTPS automatically).
+  // Custom cookie overrides often break OAuth state/CSRF and cause "Server error".
   pages: {
     signIn: '/login',
+    error: '/login',
   },
   callbacks: {
     async jwt({ token, user, account, profile }) {
@@ -84,6 +96,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   trustHost: true,
+  debug: process.env.AUTH_DEBUG === 'true',
 });
 
 export { isGoogleAuthConfigured };
