@@ -38,11 +38,11 @@ export default function Home() {
         </div>
 
         <div className="af-card rounded-3xl px-6 sm:px-10 py-10 sm:py-12">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-zinc-500 mb-5">
-            Multi-agent mesh
+          <p className="text-base sm:text-lg text-zinc-200 mb-4 max-w-xl leading-relaxed">
+            Create your own force with a mesh of agents who work together to get common outcomes.
           </p>
-          <p className="text-lg text-zinc-300 mb-4 max-w-lg leading-relaxed">
-            Multi-network agent meshes — chief routing, inter-network bus, your keys
+          <p className="text-sm text-zinc-500 mb-4 max-w-lg leading-relaxed">
+            Multi-network meshes — chief routing, inter-network bus, your keys
           </p>
           <p className="text-sm text-zinc-500 mb-10 max-w-lg leading-relaxed">
             Sign in with Google, pick a project in the portal, then open your mesh.

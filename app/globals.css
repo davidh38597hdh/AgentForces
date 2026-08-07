@@ -34,8 +34,8 @@ body {
 @layer components {
   .af-page-bg {
     background:
-      radial-gradient(ellipse 70% 50% at 15% 0%, rgba(88, 28, 135, 0.14), transparent 55%),
-      radial-gradient(ellipse 55% 40% at 90% 15%, rgba(34, 211, 238, 0.06), transparent 50%),
+      radial-gradient(ellipse 70% 50% at 15% 0%, rgba(124, 58, 237, 0.2), transparent 55%),
+      radial-gradient(ellipse 55% 40% at 90% 15%, rgba(34, 211, 238, 0.1), transparent 50%),
       linear-gradient(180deg, #000000 0%, #050505 50%, #0a0a0a 100%);
   }
 
@@ -77,34 +77,34 @@ body {
     pointer-events: none;
     position: absolute;
     border-radius: 9999px;
-    filter: blur(64px);
+    filter: blur(72px);
     will-change: transform;
   }
   .af-orb-purple {
-    width: 22rem;
-    height: 22rem;
+    width: 32rem;
+    height: 32rem;
     top: 0;
     left: 0;
-    opacity: 0.28;
-    background: radial-gradient(circle, #6d28d9 0%, transparent 68%);
+    opacity: 0.42;
+    background: radial-gradient(circle, #7c3aed 0%, #5b21b6 35%, transparent 68%);
     animation: af-drift-purple 20s ease-in-out infinite;
   }
   .af-orb-cyan {
-    width: 20rem;
-    height: 20rem;
+    width: 28rem;
+    height: 28rem;
     top: 0;
     left: 0;
-    opacity: 0.18;
-    background: radial-gradient(circle, #22d3ee 0%, transparent 68%);
+    opacity: 0.32;
+    background: radial-gradient(circle, #22d3ee 0%, #0891b2 40%, transparent 68%);
     animation: af-drift-cyan 26s ease-in-out infinite;
   }
   .af-orb-purple-soft {
-    width: 16rem;
-    height: 16rem;
+    width: 24rem;
+    height: 24rem;
     top: 0;
     left: 0;
-    opacity: 0.16;
-    background: radial-gradient(circle, #a78bfa 0%, transparent 70%);
+    opacity: 0.26;
+    background: radial-gradient(circle, #c4b5fd 0%, #a78bfa 40%, transparent 70%);
     animation: af-drift-purple-soft 24s ease-in-out infinite;
   }
 
