@@ -2041,6 +2041,21 @@ function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* Ext agents — always at bottom of left library rail */}
+            <div className="shrink-0 border-t border-zinc-200 bg-amber-50/80 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1.5">
+                <span className="text-[8px] uppercase tracking-wide text-amber-800 border border-amber-300 bg-amber-100 rounded px-0.5">
+                  Ext
+                </span>
+                External agents
+              </p>
+              <p className="text-[10px] text-amber-950/80 leading-relaxed">
+                Agents marked <span className="font-medium">Ext</span> may link across companies or
+                networks. Both ends of a cross-boundary edge must be Ext. Internal agents stay
+                within their company/network only. Dashed amber lines are external links.
+              </p>
+            </div>
           </div>
         </aside>
 
