@@ -43,7 +43,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     id: 'partnership',
     title: 'Cross-org force',
     description:
-      'Acme Product (Ext) talks to Nova Finance Ops (Ext). Boundaries by design — not a flat agent free-for-all.',
+      'Product (Ext) talks to Finance Ops (Ext) across two orgs you define. Boundaries by design — not a flat free-for-all.',
     tag: 'Cross-org',
     seed: 'partnership',
   },

@@ -55,14 +55,22 @@ function AgentNodeComponent({ data, selected }: NodeProps) {
       </div>
       <div className="px-3 pb-2.5 space-y-0.5">
         <p
-          className="text-[10px] font-medium truncate inline-flex items-center gap-1 max-w-full"
-          style={{ color: d.color }}
+          className={`text-[10px] font-medium truncate inline-flex items-center gap-1 max-w-full ${
+            d.company?.trim() ? '' : 'text-zinc-600'
+          }`}
+          style={d.company?.trim() ? { color: d.color } : undefined}
         >
-          <span
-            className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
-            style={{ backgroundColor: d.color }}
-          />
-          {d.company}
+          {d.company?.trim() ? (
+            <>
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: d.color }}
+              />
+              {d.company}
+            </>
+          ) : (
+            'No company'
+          )}
         </p>
         <p className="text-[10px] text-zinc-500 truncate">
           {d.team} · {d.role}

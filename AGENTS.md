@@ -70,7 +70,7 @@ Do not treat Streamlit Orchestrate / Python `amep-network` as this repo’s depl
 - One node may fan-out to many targets (multiple edges allowed).
 - Cross-company **or inter-network** links only when **both** nodes have `exposed: true` (External interface).
 - Cross / inter-network edges: dashed amber; orchestrate sanitizes as external / inter-network brief.
-- Companies: Acme Corp, Nova Labs, Orbit Systems (color-coded) — prefer extending `ROLE_PRESETS` / `COMPANIES` over parallel systems.
+- Companies: **none by default** — user creates them in Library → Companies (`agentforces_companies_v1`). Seeds may leave `company` empty.
 - Optional `network` field on nodes (research | computation | creative | custom).
 
 ---

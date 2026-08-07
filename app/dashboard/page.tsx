@@ -25,7 +25,7 @@ import {
 } from '@xyflow/react';
 import AgentNode, { type AgentNodeData } from './AgentNode';
 import CompanyZoneNode, { type CompanyZoneData } from './CompanyZoneNode';
-import { buildProjectSeed } from '@/lib/seed-graph';
+import { buildProjectSeed, companiesFromSeedNodes } from '@/lib/seed-graph';
 import { Logo } from '@/components/Logo';
 import {
   CONNECTOR_TYPE_META,
@@ -69,18 +69,41 @@ type SecurityMeta = {
 
 const KEYS_STORAGE = 'agentforces_user_keys_v1';
 const CONNECTORS_STORAGE = 'agentforces_connectors_v1';
+const COMPANIES_STORAGE = 'agentforces_companies_v1';
 
 const CONNECTOR_TYPES = Object.keys(CONNECTOR_TYPE_META) as ConnectorType[];
+
+/** User-defined company. No product defaults — catalog starts empty. */
+export type CompanyDef = {
+  id: string;
+  name: string;
+  color: string;
+};
+
+const COMPANY_COLOR_PALETTE = [
+  '#3b82f6',
+  '#a855f7',
+  '#14b8a6',
+  '#f59e0b',
+  '#ec4899',
+  '#22c55e',
+  '#60a5fa',
+  '#f97316',
+  '#eab308',
+  '#6366f1',
+];
 
 function newConnectorId(): string {
   return `conn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-const COMPANIES = [
-  { id: 'acme', name: 'Acme Corp', color: '#3b82f6' },
-  { id: 'nova', name: 'Nova Labs', color: '#a855f7' },
-  { id: 'orbit', name: 'Orbit Systems', color: '#14b8a6' },
-];
+function newCompanyId(): string {
+  return `co_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function nextCompanyColor(existing: CompanyDef[]): string {
+  return COMPANY_COLOR_PALETTE[existing.length % COMPANY_COLOR_PALETTE.length];
+}
 
 const ROLE_PRESETS: {
   id: string;
@@ -183,28 +206,29 @@ const ROW_H = 150;
 const LANE_PAD_X = 28;
 const LANE_PAD_Y = 48;
 
-function companyByName(name: string) {
-  return COMPANIES.find((c) => c.name === name);
+function companyByName(catalog: CompanyDef[], name: string) {
+  return catalog.find((c) => c.name === name);
 }
 
-function companyById(id: string) {
-  return COMPANIES.find((c) => c.id === id);
+function companyById(catalog: CompanyDef[], id: string) {
+  return catalog.find((c) => c.id === id);
 }
 
-/** Companies present on canvas + catalog (for switcher chips). */
-function meshCompanies(agentNodes: Node[]) {
-  const seen = new Map<string, { id: string; name: string; color: string }>();
-  for (const c of COMPANIES) {
-    seen.set(c.name, c);
+/** Catalog + companies present on canvas (for switcher chips). No phantom defaults. */
+function meshCompanies(catalog: CompanyDef[], agentNodes: Node[]): CompanyDef[] {
+  const seen = new Map<string, CompanyDef>();
+  for (const c of catalog) {
+    if (c.name.trim()) seen.set(c.name, c);
   }
   for (const n of agentNodes) {
     if (n.id.startsWith(ZONE_PREFIX)) continue;
     const d = n.data as AgentNodeData;
-    if (!d?.company) continue;
-    if (!seen.has(d.company)) {
-      seen.set(d.company, {
-        id: `custom-${d.company.toLowerCase().replace(/\s+/g, '-')}`,
-        name: d.company,
+    const name = (d?.company || '').trim();
+    if (!name) continue;
+    if (!seen.has(name)) {
+      seen.set(name, {
+        id: `from-node-${name.toLowerCase().replace(/\s+/g, '-')}`,
+        name,
         color: d.color || '#71717a',
       });
     }
@@ -214,16 +238,16 @@ function meshCompanies(agentNodes: Node[]) {
 
 function makeNode(
   preset: (typeof ROLE_PRESETS)[0],
-  company: (typeof COMPANIES)[0],
-  index: number
+  company: CompanyDef | null,
+  index: number,
+  colIndex = 0
 ): Node {
   const id = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 6)}`;
-  const col = Math.max(0, COMPANIES.findIndex((c) => c.id === company.id));
   return {
     id,
     type: 'agent',
     position: {
-      x: 60 + col * COL_W + (index % 2) * 40,
+      x: 60 + colIndex * COL_W + (index % 2) * 40,
       y: 80 + Math.floor(index / 1) * ROW_H + (index % 3) * 12,
     },
     data: {
@@ -232,9 +256,9 @@ function makeNode(
       provider: 'xai' as Provider,
       model: 'grok-3',
       role: preset.id,
-      color: company.color,
+      color: company?.color || preset.color,
       team: preset.team,
-      company: company.name,
+      company: company?.name || '',
       exposed: preset.defaultExposed,
       network: undefined,
     } satisfies AgentNodeData,
@@ -243,10 +267,11 @@ function makeNode(
 
 function buildCompanyZoneNodes(
   agentNodes: Node[],
+  catalog: CompanyDef[],
   focusCompanyId: string | 'all'
 ): Node[] {
   const agents = agentNodes.filter((n) => n.type === 'agent' || !n.type);
-  const companies = meshCompanies(agents);
+  const companies = meshCompanies(catalog, agents);
   const zones: Node[] = [];
 
   for (let col = 0; col < companies.length; col++) {
@@ -296,15 +321,19 @@ function buildCompanyZoneNodes(
 function CompanyFocusFit({
   focusCompanyId,
   agentNodes,
+  catalog,
   fitEpoch,
 }: {
   focusCompanyId: string | 'all';
   agentNodes: Node[];
+  catalog: CompanyDef[];
   fitEpoch: number;
 }) {
   const { fitView } = useReactFlow();
   const agentsRef = useRef(agentNodes);
   agentsRef.current = agentNodes;
+  const catalogRef = useRef(catalog);
+  catalogRef.current = catalog;
   const skipFirst = useRef(true);
 
   useEffect(() => {
@@ -323,12 +352,15 @@ function CompanyFocusFit({
       return () => window.clearTimeout(t);
     }
 
-    const company = companyById(focusCompanyId);
+    const company = companyById(catalogRef.current, focusCompanyId);
     const matchName = company?.name;
     const targets = agents.filter((n) => {
       const d = n.data as AgentNodeData;
       if (matchName) return d.company === matchName;
-      return companyByName(d.company)?.id === focusCompanyId || d.company === focusCompanyId;
+      return (
+        companyByName(catalogRef.current, d.company)?.id === focusCompanyId ||
+        d.company === focusCompanyId
+      );
     });
     if (!targets.length) return;
     const t = window.setTimeout(() => {
@@ -382,11 +414,14 @@ function Dashboard() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([
-    makeNode(ROLE_PRESETS[3], COMPANIES[0], 0),
+    makeNode(ROLE_PRESETS[3], null, 0),
   ]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [addCompanyId, setAddCompanyId] = useState(COMPANIES[0].id);
+  /** User-defined companies only — starts empty */
+  const [companies, setCompanies] = useState<CompanyDef[]>([]);
+  const [addCompanyId, setAddCompanyId] = useState<string | null>(null);
+  const [newCompanyName, setNewCompanyName] = useState('');
   /** Active company lens on the canvas: 'all' or company id */
   const [focusCompanyId, setFocusCompanyId] = useState<string | 'all'>('all');
   const [showCompanyLanes, setShowCompanyLanes] = useState(true);
@@ -432,6 +467,41 @@ function Dashboard() {
         if (Array.isArray(parsed)) setConnectors(parsed);
       }
     } catch {}
+    try {
+      const raw = localStorage.getItem(COMPANIES_STORAGE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as CompanyDef[];
+        if (Array.isArray(parsed)) {
+          // Never re-hydrate hard-coded demo brands; only user-shaped entries
+          // Strip former product defaults if still in older localStorage
+          const legacyNames = new Set(['acme corp', 'nova labs', 'orbit systems']);
+          const cleaned = parsed
+            .filter(
+              (c) =>
+                c &&
+                typeof c.id === 'string' &&
+                typeof c.name === 'string' &&
+                c.name.trim() &&
+                typeof c.color === 'string' &&
+                !legacyNames.has(c.name.trim().toLowerCase())
+            )
+            .map((c) => ({
+              id: c.id,
+              name: c.name.trim(),
+              color: c.color || nextCompanyColor([]),
+            }));
+          setCompanies(cleaned);
+          if (cleaned[0]) setAddCompanyId(cleaned[0].id);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const persistCompanies = useCallback((next: CompanyDef[]) => {
+    setCompanies(next);
+    try {
+      localStorage.setItem(COMPANIES_STORAGE, JSON.stringify(next));
+    } catch {}
   }, []);
 
   const persistConnectors = useCallback((next: ConnectorConfig[]) => {
@@ -440,6 +510,73 @@ function Dashboard() {
       localStorage.setItem(CONNECTORS_STORAGE, JSON.stringify(next));
     } catch {}
   }, []);
+
+  const createCompany = useCallback(
+    (nameRaw: string, color?: string): CompanyDef | null => {
+      const name = nameRaw.trim();
+      if (!name) return null;
+      if (companies.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+        setError('A company with that name already exists');
+        return null;
+      }
+      const entry: CompanyDef = {
+        id: newCompanyId(),
+        name,
+        color: color || nextCompanyColor(companies),
+      };
+      persistCompanies([...companies, entry]);
+      setAddCompanyId(entry.id);
+      setError('');
+      return entry;
+    },
+    [companies, persistCompanies]
+  );
+
+  const removeCompany = useCallback(
+    (id: string) => {
+      const victim = companies.find((c) => c.id === id);
+      const next = companies.filter((c) => c.id !== id);
+      persistCompanies(next);
+      if (addCompanyId === id) setAddCompanyId(next[0]?.id || null);
+      if (focusCompanyId === id) setFocusCompanyId('all');
+      if (victim) {
+        setNodes((nds) =>
+          nds.map((n) => {
+            const d = n.data as AgentNodeData;
+            if (d.company !== victim.name) return n;
+            return {
+              ...n,
+              data: { ...d, company: '', color: d.color },
+            };
+          })
+        );
+      }
+    },
+    [companies, persistCompanies, addCompanyId, focusCompanyId, setNodes]
+  );
+
+  const mergeCompaniesFromSeed = useCallback(
+    (seedNodes: Node[]) => {
+      const found = companiesFromSeedNodes(seedNodes);
+      if (!found.length) return;
+      setCompanies((prev) => {
+        let next = [...prev];
+        for (const f of found) {
+          if (next.some((c) => c.name.toLowerCase() === f.name.toLowerCase())) continue;
+          next.push({
+            id: newCompanyId(),
+            name: f.name,
+            color: f.color,
+          });
+        }
+        try {
+          localStorage.setItem(COMPANIES_STORAGE, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    },
+    []
+  );
 
   const addConnector = () => {
     const meta = CONNECTOR_TYPE_META[newConnectorType];
@@ -536,11 +673,12 @@ function Dashboard() {
       setNodes(seeded.nodes);
       setEdges(seeded.edges);
       if (seeded.task) setTask(seeded.task);
+      mergeCompaniesFromSeed(seeded.nodes);
     } catch {
       /* keep defaults */
     }
     setSeedApplied(true);
-  }, [searchParams, seedApplied, setNodes, setEdges]);
+  }, [searchParams, seedApplied, setNodes, setEdges, mergeCompaniesFromSeed]);
 
   const saveKeys = (next: UserKeys) => {
     setUserKeys(next);
@@ -554,12 +692,16 @@ function Dashboard() {
     [nodes]
   );
 
-  const companiesOnMesh = useMemo(() => meshCompanies(agentNodes), [agentNodes]);
+  const companiesOnMesh = useMemo(
+    () => meshCompanies(companies, agentNodes),
+    [companies, agentNodes]
+  );
 
   const companyCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const n of agentNodes) {
-      const name = (n.data as AgentNodeData).company;
+      const name = (n.data as AgentNodeData).company?.trim();
+      if (!name) continue;
       counts.set(name, (counts.get(name) || 0) + 1);
     }
     return counts;
@@ -584,14 +726,16 @@ function Dashboard() {
   /** Nodes rendered on canvas: company zones under agents, with focus dimming. */
   const displayNodes = useMemo(() => {
     const focusName =
-      focusCompanyId === 'all' ? null : companyById(focusCompanyId)?.name || null;
+      focusCompanyId === 'all'
+        ? null
+        : companyById(companies, focusCompanyId)?.name || null;
 
     const decorated = agentNodes.map((n) => {
       const d = n.data as AgentNodeData;
       const matches =
         focusCompanyId === 'all' ||
         d.company === focusName ||
-        companyByName(d.company)?.id === focusCompanyId;
+        companyByName(companies, d.company)?.id === focusCompanyId;
       return {
         ...n,
         zIndex: matches ? 10 : 2,
@@ -603,18 +747,21 @@ function Dashboard() {
     });
 
     if (!showCompanyLanes) return decorated;
-    const zones = buildCompanyZoneNodes(agentNodes, focusCompanyId);
+    const zones = buildCompanyZoneNodes(agentNodes, companies, focusCompanyId);
     return [...zones, ...decorated];
-  }, [agentNodes, focusCompanyId, showCompanyLanes]);
+  }, [agentNodes, companies, focusCompanyId, showCompanyLanes]);
 
   const displayEdges = useMemo(() => {
     if (focusCompanyId === 'all') return edges;
-    const focusName = companyById(focusCompanyId)?.name;
+    const focusName = companyById(companies, focusCompanyId)?.name;
     const focusedIds = new Set(
       agentNodes
         .filter((n) => {
           const d = n.data as AgentNodeData;
-          return d.company === focusName || companyByName(d.company)?.id === focusCompanyId;
+          return (
+            d.company === focusName ||
+            companyByName(companies, d.company)?.id === focusCompanyId
+          );
         })
         .map((n) => n.id)
     );
@@ -629,7 +776,7 @@ function Dashboard() {
         animated: involved ? e.animated : false,
       };
     });
-  }, [edges, focusCompanyId, agentNodes]);
+  }, [edges, focusCompanyId, agentNodes, companies]);
 
   const getData = useCallback(
     (id: string) => agentNodes.find((n) => n.id === id)?.data as AgentNodeData | undefined,
@@ -644,16 +791,33 @@ function Dashboard() {
     [onNodesChange]
   );
 
-  const switchCompanyFocus = useCallback((id: string | 'all') => {
-    setFocusCompanyId(id);
-    if (id !== 'all') {
-      const c = companyById(id);
-      if (c) setAddCompanyId(c.id);
-    }
-  }, []);
+  const switchCompanyFocus = useCallback(
+    (id: string | 'all') => {
+      setFocusCompanyId(id);
+      if (id !== 'all') {
+        const c = companyById(companies, id);
+        if (c) setAddCompanyId(c.id);
+      }
+    },
+    [companies]
+  );
 
   const assignSelectedToCompany = useCallback(
-    (company: { id: string; name: string; color: string }) => {
+    (company: CompanyDef | null) => {
+      if (!company) {
+        if (selectedId) {
+          setNodes((nds) =>
+            nds.map((n) => {
+              if (n.id !== selectedId) return n;
+              const d = n.data as AgentNodeData;
+              return { ...n, data: { ...d, company: '' } };
+            })
+          );
+        }
+        setAddCompanyId(null);
+        setFocusCompanyId('all');
+        return;
+      }
       if (!selectedId) {
         setAddCompanyId(company.id);
         switchCompanyFocus(company.id);
@@ -676,10 +840,11 @@ function Dashboard() {
   );
 
   const arrangeByCompany = useCallback(() => {
-    const companies = meshCompanies(agentNodes);
-    const order = companies.length
-      ? companies
-      : COMPANIES.map((c) => ({ id: c.id, name: c.name, color: c.color }));
+    const order = meshCompanies(companies, agentNodes);
+    if (!order.length) {
+      setError('Create companies first (Library → Companies), then arrange.');
+      return;
+    }
 
     setNodes((nds) => {
       const agents = nds.filter((n) => !n.id.startsWith(ZONE_PREFIX));
@@ -688,9 +853,10 @@ function Dashboard() {
 
       return agents.map((n) => {
         const d = n.data as AgentNodeData;
-        const col = colIndex.get(d.company) ?? 0;
-        const row = rowInCol.get(d.company) || 0;
-        rowInCol.set(d.company, row + 1);
+        const key = d.company?.trim() || '';
+        const col = key ? colIndex.get(key) ?? order.length : order.length;
+        const row = rowInCol.get(key) || 0;
+        rowInCol.set(key, row + 1);
         return {
           ...n,
           position: {
@@ -702,7 +868,7 @@ function Dashboard() {
     });
     // Re-fit viewport to current company lens after column layout
     window.setTimeout(() => setFitEpoch((e) => e + 1), 30);
-  }, [agentNodes, setNodes]);
+  }, [agentNodes, companies, setNodes]);
 
   /** Allow many edges; block cross-company / inter-network unless both exposed */
   const isValidConnection = useCallback(
@@ -763,31 +929,55 @@ function Dashboard() {
 
   const addAgent = (preset?: (typeof ROLE_PRESETS)[0]) => {
     if (agentNodes.length >= 12) return;
-    const company = companyById(addCompanyId) || COMPANIES[0];
+    const company = addCompanyId ? companyById(companies, addCompanyId) || null : null;
     const p = preset || ROLE_PRESETS[3];
+    const col = company ? Math.max(0, companies.findIndex((c) => c.id === company.id)) : 0;
     setNodes((nds) => {
       const agents = nds.filter((n) => !n.id.startsWith(ZONE_PREFIX));
-      return [...agents, makeNode(p, company, agents.length)];
+      return [...agents, makeNode(p, company, agents.length, col)];
     });
-    // Keep new agent company in view
-    setFocusCompanyId(company.id);
+    if (company) setFocusCompanyId(company.id);
   };
 
   const seedTwoCompanies = () => {
-    const a = COMPANIES[0];
-    const b = COMPANIES[1];
+    // Create ephemeral demo orgs only when the user asks — not product defaults
+    let a = companies[0];
+    let b = companies[1];
+    let catalog = companies;
+    if (!a || !b) {
+      const created: CompanyDef[] = [...companies];
+      if (!a) {
+        a = {
+          id: newCompanyId(),
+          name: 'Company A',
+          color: nextCompanyColor(created),
+        };
+        created.push(a);
+      }
+      if (!b || b.id === a.id) {
+        b = {
+          id: newCompanyId(),
+          name: companies.some((c) => c.name === 'Company B') ? 'Company C' : 'Company B',
+          color: nextCompanyColor(created),
+        };
+        created.push(b);
+      }
+      catalog = created;
+      persistCompanies(created);
+    }
+
     const product = ROLE_PRESETS.find((r) => r.id === 'product')!;
     const finance = ROLE_PRESETS.find((r) => r.id === 'finance_ops')!;
     const research = ROLE_PRESETS.find((r) => r.id === 'research')!;
     const coder = ROLE_PRESETS.find((r) => r.id === 'coding')!;
 
-    const n1 = makeNode(research, a, 0);
+    const n1 = makeNode(research, a, 0, 0);
     n1.position = { x: 40, y: 80 };
-    const n2 = makeNode(product, a, 1);
+    const n2 = makeNode(product, a, 1, 0);
     n2.position = { x: 40, y: 240 };
-    const n3 = makeNode(finance, b, 2);
+    const n3 = makeNode(finance, b, 2, 1);
     n3.position = { x: 420, y: 240 };
-    const n4 = makeNode(coder, b, 3);
+    const n4 = makeNode(coder, b, 3, 1);
     n4.position = { x: 420, y: 80 };
 
     setNodes([n1, n2, n3, n4]);
@@ -814,6 +1004,10 @@ function Dashboard() {
         ...edgeStyle(false),
       },
     ]);
+    setAddCompanyId(a.id);
+    setFocusCompanyId('all');
+    setFitEpoch((e) => e + 1);
+    void catalog;
   };
 
   const updateSelected = (patch: Partial<AgentNodeData>) => {
@@ -1174,12 +1368,18 @@ function Dashboard() {
                 <div className="space-y-1.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
                     Core agents
-                    {addCompanyId && (
+                    {addCompanyId && companyById(companies, addCompanyId) ? (
                       <span className="ml-1.5 normal-case tracking-normal font-normal text-zinc-600">
                         · adds to{' '}
-                        <span style={{ color: companyById(addCompanyId)?.color }}>
-                          {companyById(addCompanyId)?.name}
+                        <span
+                          style={{ color: companyById(companies, addCompanyId)!.color }}
+                        >
+                          {companyById(companies, addCompanyId)!.name}
                         </span>
+                      </span>
+                    ) : (
+                      <span className="ml-1.5 normal-case tracking-normal font-normal text-zinc-600">
+                        · no company
                       </span>
                     )}
                   </p>
@@ -1213,7 +1413,7 @@ function Dashboard() {
                     onClick={() => setLibraryTab('companies')}
                     className="w-full mt-3 text-[10px] text-zinc-600 hover:text-zinc-400 text-left px-1"
                   >
-                    Change default company →
+                    {companies.length ? 'Manage companies →' : 'Create companies →'}
                   </button>
                 </div>
               )}
@@ -1222,45 +1422,108 @@ function Dashboard() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">
-                      Default company
+                      Your companies
                     </p>
                     <p className="text-[10px] text-zinc-600 leading-relaxed mb-2">
-                      New agents join this company. Click also focuses the canvas.
+                      No presets — add the orgs you field. Optional default for new agents.
                     </p>
+                    <div className="flex gap-1.5 mb-3">
+                      <input
+                        value={newCompanyName}
+                        onChange={(e) => setNewCompanyName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const created = createCompany(newCompanyName);
+                            if (created) setNewCompanyName('');
+                          }
+                        }}
+                        placeholder="New company name"
+                        className="flex-1 h-8 px-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none focus:border-violet-500/40"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const created = createCompany(newCompanyName);
+                          if (created) setNewCompanyName('');
+                        }}
+                        className="h-8 px-2.5 rounded-lg bg-white text-black text-[11px] font-medium shrink-0"
+                      >
+                        Add
+                      </button>
+                    </div>
                     <div className="space-y-1.5">
-                      {COMPANIES.map((c) => {
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddCompanyId(null);
+                          setFocusCompanyId('all');
+                        }}
+                        className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                          !addCompanyId
+                            ? 'border-white/25 bg-zinc-900'
+                            : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700'
+                        }`}
+                      >
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0 bg-zinc-600" />
+                        <span className="text-[11px] text-zinc-200 flex-1">No company</span>
+                        {!addCompanyId && (
+                          <span className="text-[9px] text-zinc-500 uppercase tracking-wide">
+                            default
+                          </span>
+                        )}
+                      </button>
+                      {companies.map((c) => {
                         const active = addCompanyId === c.id;
                         const count = companyCounts.get(c.name) || 0;
                         return (
-                          <button
+                          <div
                             key={c.id}
-                            type="button"
-                            onClick={() => {
-                              setAddCompanyId(c.id);
-                              switchCompanyFocus(c.id);
-                            }}
-                            className={`w-full flex items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                            className={`flex items-center gap-1 rounded-lg border px-1 py-1 ${
                               active
                                 ? 'border-white/25 bg-zinc-900'
-                                : 'border-zinc-800/80 bg-zinc-950/60 hover:border-zinc-700'
+                                : 'border-zinc-800/80 bg-zinc-950/60'
                             }`}
                           >
-                            <span
-                              className="h-2.5 w-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: c.color }}
-                            />
-                            <span className="text-[11px] text-zinc-200 flex-1 truncate">
-                              {c.name}
-                            </span>
-                            <span className="text-[10px] text-zinc-600 tabular-nums">{count}</span>
-                            {active && (
-                              <span className="text-[9px] text-zinc-500 uppercase tracking-wide">
-                                default
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAddCompanyId(c.id);
+                                switchCompanyFocus(c.id);
+                              }}
+                              className="flex-1 flex items-center gap-2 px-1.5 py-1.5 text-left min-w-0"
+                            >
+                              <span
+                                className="h-2.5 w-2.5 rounded-full shrink-0"
+                                style={{ backgroundColor: c.color }}
+                              />
+                              <span className="text-[11px] text-zinc-200 flex-1 truncate">
+                                {c.name}
                               </span>
-                            )}
-                          </button>
+                              <span className="text-[10px] text-zinc-600 tabular-nums">
+                                {count}
+                              </span>
+                              {active && (
+                                <span className="text-[9px] text-zinc-500 uppercase tracking-wide">
+                                  default
+                                </span>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeCompany(c.id)}
+                              className="text-[10px] text-zinc-600 hover:text-red-400 px-1.5 py-1 shrink-0"
+                              title="Remove company"
+                            >
+                              ×
+                            </button>
+                          </div>
                         );
                       })}
+                      {companies.length === 0 && (
+                        <p className="text-[11px] text-zinc-600 px-1 py-2">
+                          Empty catalog. Add a company to assign agents and show lanes.
+                        </p>
+                      )}
                     </div>
                   </div>
                   <button
@@ -1361,7 +1624,7 @@ function Dashboard() {
                 if (n.id.startsWith(ZONE_PREFIX)) return;
                 setSelectedId(n.id);
                 const d = n.data as AgentNodeData;
-                const c = companyByName(d.company);
+                const c = companyByName(companies, d.company);
                 if (c) setAddCompanyId(c.id);
               }}
               onPaneClick={() => setSelectedId(null)}
@@ -1388,6 +1651,7 @@ function Dashboard() {
               <CompanyFocusFit
                 focusCompanyId={focusCompanyId}
                 agentNodes={agentNodes}
+                catalog={companies}
                 fitEpoch={fitEpoch}
               />
 
@@ -1466,7 +1730,7 @@ function Dashboard() {
                       onClick={seedTwoCompanies}
                       className="text-[11px] px-2 py-1 rounded-md text-amber-500/90 hover:text-amber-400"
                     >
-                      Demo: 2 companies
+                      Demo: 2 orgs
                     </button>
                     <button
                       type="button"
@@ -1542,7 +1806,18 @@ function Dashboard() {
                         to company
                       </p>
                       <div className="flex flex-wrap gap-1">
-                        {COMPANIES.map((c) => {
+                        <button
+                          type="button"
+                          onClick={() => assignSelectedToCompany(null)}
+                          className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
+                            !(selected.data as AgentNodeData).company?.trim()
+                              ? 'border-white/30 text-zinc-100'
+                              : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          None
+                        </button>
+                        {companies.map((c) => {
                           const current =
                             (selected.data as AgentNodeData).company === c.name;
                           return (
@@ -1731,7 +2006,8 @@ function Dashboard() {
                           <span className="flex-1 truncate">
                             Company ·{' '}
                             <span className="text-zinc-300">
-                              {(selected.data as AgentNodeData).company}
+                              {(selected.data as AgentNodeData).company?.trim() ||
+                                'none'}
                             </span>
                           </span>
                           <span className="text-[10px] text-zinc-600 group-open:hidden">Open</span>
@@ -1740,7 +2016,19 @@ function Dashboard() {
                           </span>
                         </summary>
                         <div className="px-2 pb-2 space-y-1.5 border-t border-zinc-800/60 pt-2">
-                          {COMPANIES.map((c) => {
+                          <button
+                            type="button"
+                            onClick={() => assignSelectedToCompany(null)}
+                            className={`w-full flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-[11px] transition-colors ${
+                              !(selected.data as AgentNodeData).company?.trim()
+                                ? 'border-white/25 bg-zinc-900 text-zinc-100'
+                                : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                            }`}
+                          >
+                            <span className="h-2 w-2 rounded-full shrink-0 bg-zinc-600" />
+                            No company
+                          </button>
+                          {companies.map((c) => {
                             const current =
                               (selected.data as AgentNodeData).company === c.name;
                             return (
@@ -1762,6 +2050,11 @@ function Dashboard() {
                               </button>
                             );
                           })}
+                          {companies.length === 0 && (
+                            <p className="text-[10px] text-zinc-600 px-1">
+                              Create companies in Library → Companies first.
+                            </p>
+                          )}
                         </div>
                       </details>
 
