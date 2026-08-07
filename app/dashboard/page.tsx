@@ -242,6 +242,10 @@ function Dashboard() {
   const [error, setError] = useState('');
   const [connectHint, setConnectHint] = useState('');
   const [seedApplied, setSeedApplied] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(true);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+  const [libraryQuery, setLibraryQuery] = useState('');
+  const [inspectorTab, setInspectorTab] = useState<'configure' | 'run'>('configure');
 
   useEffect(() => {
     try {
@@ -249,6 +253,14 @@ function Dashboard() {
       if (raw) setUserKeys(JSON.parse(raw));
     } catch {}
   }, []);
+
+  // Open right inspector when an agent is selected
+  useEffect(() => {
+    if (selectedId) {
+      setInspectorOpen(true);
+      setInspectorTab('configure');
+    }
+  }, [selectedId]);
 
   // Portal → dashboard: apply project seed once
   useEffect(() => {
@@ -280,6 +292,17 @@ function Dashboard() {
     () => nodes.find((n) => n.id === selectedId) || null,
     [nodes, selectedId]
   );
+
+  const filteredPresets = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return ROLE_PRESETS;
+    return ROLE_PRESETS.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.team.toLowerCase().includes(q) ||
+        r.id.toLowerCase().includes(q)
+    );
+  }, [libraryQuery]);
 
   const getData = useCallback(
     (id: string) => nodes.find((n) => n.id === id)?.data as AgentNodeData | undefined,
@@ -535,8 +558,128 @@ function Dashboard() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
-        <div className="flex-1 min-h-[320px] relative border-b lg:border-b-0 lg:border-r border-zinc-900">
+      <div className="flex-1 min-h-0 flex relative">
+        {/* —— Left: Agent library (toggle) —— */}
+        <aside
+          className={`shrink-0 border-r border-zinc-800/80 bg-black/80 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
+            libraryOpen ? 'w-[260px]' : 'w-0 border-r-0'
+          }`}
+        >
+          <div className="w-[260px] h-full flex flex-col min-h-0">
+            <div className="px-3 py-3 border-b border-zinc-800/80 flex items-center justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-300">
+                  Agent library
+                </p>
+                <p className="text-[10px] text-zinc-600">Drag-ready roles · click to add</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLibraryOpen(false)}
+                className="text-zinc-500 hover:text-zinc-200 text-xs px-1.5 py-1 rounded border border-zinc-800"
+                title="Hide library"
+              >
+                ‹
+              </button>
+            </div>
+            <div className="p-3 border-b border-zinc-800/60">
+              <input
+                value={libraryQuery}
+                onChange={(e) => setLibraryQuery(e.target.value)}
+                placeholder="Search agents…"
+                className="w-full h-8 px-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs focus:outline-none focus:border-violet-500/40"
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+                  Core agents
+                </p>
+                <div className="space-y-1.5">
+                  {filteredPresets.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => addAgent(r)}
+                      className="w-full text-left rounded-lg border border-zinc-800/80 bg-zinc-950/60 hover:border-violet-500/40 hover:bg-zinc-900/80 px-2.5 py-2 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: r.color }}
+                        />
+                        <span className="text-xs font-medium text-zinc-200">{r.name}</span>
+                        {r.defaultExposed && (
+                          <span className="ml-auto text-[9px] text-amber-500/80 border border-amber-500/30 rounded px-1">
+                            Ext
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-zinc-600 mt-0.5 pl-4 truncate">{r.team}</p>
+                    </button>
+                  ))}
+                  {filteredPresets.length === 0 && (
+                    <p className="text-[11px] text-zinc-600 px-1">No agents match.</p>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+                  Providers
+                </p>
+                <ul className="space-y-1">
+                  {(
+                    [
+                      { id: 'xai', label: 'xAI', models: MODELS.xai.length },
+                      { id: 'openai', label: 'OpenAI', models: MODELS.openai.length },
+                      { id: 'anthropic', label: 'Anthropic', models: MODELS.anthropic.length },
+                    ] as const
+                  ).map((p) => (
+                    <li
+                      key={p.id}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-800/60 text-[11px] text-zinc-400"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/80" />
+                      {p.label}
+                      <span className="ml-auto text-zinc-600">{p.models} models</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+                  Company for new agents
+                </p>
+                <select
+                  value={addCompanyId}
+                  onChange={(e) => setAddCompanyId(e.target.value)}
+                  className="w-full text-[11px] bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-2"
+                >
+                  {COMPANIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {!libraryOpen && (
+          <button
+            type="button"
+            onClick={() => setLibraryOpen(true)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 rounded-r-lg border border-l-0 border-zinc-700 bg-zinc-950/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-violet-300 writing-mode-vertical"
+            style={{ writingMode: 'vertical-rl' }}
+            title="Show agent library"
+          >
+            Agent library
+          </button>
+        )}
+
+        {/* —— Center: canvas —— */}
+        <div className="flex-1 min-w-0 min-h-0 relative">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -550,39 +693,18 @@ function Dashboard() {
             nodeTypes={nodeTypes}
             fitView
             proOptions={{ hideAttribution: true }}
-            className="bg-[#0a0a0a]"
+            className="bg-[#000000]"
           >
-            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#27272a" />
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1c1c1e" />
             <Controls />
             <MiniMap
               nodeColor={(n) => (n.data as AgentNodeData)?.color || '#52525b'}
-              maskColor="rgba(0,0,0,0.7)"
+              maskColor="rgba(0,0,0,0.75)"
             />
           </ReactFlow>
 
-          <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 pointer-events-none">
-            <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-950/90 p-1.5 backdrop-blur">
-              <select
-                value={addCompanyId}
-                onChange={(e) => setAddCompanyId(e.target.value)}
-                className="text-[11px] bg-zinc-900 border border-zinc-800 rounded-md px-2 py-1"
-              >
-                {COMPANIES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              {ROLE_PRESETS.slice(0, 6).map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => addAgent(r)}
-                  className="text-[11px] px-2 py-1 rounded-md border border-zinc-800 text-zinc-400 hover:text-zinc-200"
-                >
-                  + {r.name}
-                </button>
-              ))}
+          <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-2 pointer-events-none justify-center">
+            <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-lg border border-zinc-800 bg-black/90 p-1.5 backdrop-blur">
               <button
                 type="button"
                 onClick={seedTwoCompanies}
@@ -593,15 +715,29 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() => setEdges([])}
-                className="text-[11px] px-2 py-1 rounded-md text-zinc-500"
+                className="text-[11px] px-2 py-1 rounded-md text-zinc-500 hover:text-zinc-300"
               >
                 Clear links
+              </button>
+              <button
+                type="button"
+                onClick={() => setLibraryOpen((o) => !o)}
+                className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-violet-300 border border-zinc-800"
+              >
+                {libraryOpen ? 'Hide library' : 'Library'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setInspectorOpen((o) => !o)}
+                className="text-[11px] px-2 py-1 rounded-md text-zinc-400 hover:text-cyan-300 border border-zinc-800"
+              >
+                {inspectorOpen ? 'Hide inspector' : 'Inspector'}
               </button>
             </div>
           </div>
 
           <div className="absolute bottom-3 left-3 space-y-1">
-            <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-800 bg-zinc-950/90 px-2.5 py-1.5">
+            <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-800 bg-black/90 px-2.5 py-1.5">
               {COMPANIES.map((c) => (
                 <span key={c.id} className="flex items-center gap-1.5 text-[10px] text-zinc-500">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
@@ -614,252 +750,351 @@ function Dashboard() {
               </span>
             </div>
             {connectHint && (
-              <p className="text-[10px] text-amber-400 bg-zinc-950/90 border border-zinc-800 rounded px-2 py-1">
+              <p className="text-[10px] text-amber-400 bg-black/90 border border-zinc-800 rounded px-2 py-1">
                 {connectHint}
               </p>
             )}
           </div>
         </div>
 
-        <aside className="w-full lg:w-[340px] shrink-0 flex flex-col max-h-[50vh] lg:max-h-none overflow-y-auto">
-          <div className="p-4 space-y-4 border-b border-zinc-900">
-            <textarea
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              rows={3}
-              placeholder="Task for the mesh (chief routes by keywords: research / calc / write…)"
-              className="w-full bg-transparent text-sm border border-zinc-800 rounded-lg px-3 py-2 focus:outline-none resize-none"
-            />
-            <details>
-              <summary className="text-[11px] text-zinc-600 cursor-pointer list-none">+ Context & connectors</summary>
-              <div className="mt-2 space-y-2">
-                <textarea
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  rows={2}
-                  placeholder="Shared notes..."
-                  className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
-                />
-                <textarea
-                  value={urls}
-                  onChange={(e) => setUrls(e.target.value)}
-                  rows={2}
-                  placeholder="URLs"
-                  className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
-                />
-                <label className="flex items-center gap-2 text-[11px] text-zinc-500">
-                  <input
-                    type="checkbox"
-                    checked={postOutcomeToSlack}
-                    onChange={(e) => setPostOutcomeToSlack(e.target.checked)}
-                  />
-                  Slack outcome
-                </label>
-                <input
-                  value={slackWebhook}
-                  onChange={(e) => setSlackWebhook(e.target.value)}
-                  placeholder="Slack webhook"
-                  className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
-                />
-                <input
-                  value={genericWebhook}
-                  onChange={(e) => setGenericWebhook(e.target.value)}
-                  placeholder="Zapier webhook"
-                  className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
-                />
-              </div>
-            </details>
+        {!inspectorOpen && (
+          <button
+            type="button"
+            onClick={() => setInspectorOpen(true)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 rounded-l-lg border border-r-0 border-zinc-700 bg-zinc-950/95 px-1.5 py-3 text-[10px] text-zinc-400 hover:text-cyan-300"
+            style={{ writingMode: 'vertical-rl' }}
+            title="Show agent inspector"
+          >
+            Inspector
+          </button>
+        )}
 
-            <button
-              type="button"
-              onClick={run}
-              disabled={running || !task.trim()}
-              className="w-full h-10 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-30"
-            >
-              {running ? 'Running mesh…' : 'Run mesh'}
-            </button>
-            {error && <p className="text-xs text-red-400">{error}</p>}
-            <p className="text-[10px] text-zinc-600">
-              Chief routes the primary network; inter-network hops use the bus (AMEP/1 envelope shape).
-              Dashed amber = Ext / inter-network only.
-            </p>
-          </div>
-
-          {selected && (
-            <div className="p-4 space-y-3 border-b border-zinc-900">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Selected</h3>
-                <button type="button" onClick={removeSelected} className="text-[11px] text-zinc-600 hover:text-red-400">
-                  Remove
+        {/* —— Right: Agent customization (toggle) —— */}
+        <aside
+          className={`shrink-0 border-l border-zinc-800/80 bg-black/80 flex flex-col transition-[width] duration-200 ease-out overflow-hidden ${
+            inspectorOpen ? 'w-[320px]' : 'w-0 border-l-0'
+          }`}
+        >
+          <div className="w-[320px] h-full flex flex-col min-h-0">
+            <div className="px-3 py-2 border-b border-zinc-800/80 flex items-center justify-between gap-2">
+              <div className="flex rounded-lg border border-zinc-800 p-0.5 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setInspectorTab('configure')}
+                  className={`px-2.5 py-1 rounded-md ${
+                    inspectorTab === 'configure'
+                      ? 'bg-zinc-800 text-zinc-100'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Configure
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInspectorTab('run')}
+                  className={`px-2.5 py-1 rounded-md ${
+                    inspectorTab === 'run'
+                      ? 'bg-zinc-800 text-zinc-100'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  Run
                 </button>
               </div>
-              <input
-                value={(selected.data as AgentNodeData).name}
-                onChange={(e) => updateSelected({ name: e.target.value })}
-                className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-sm border border-zinc-800 focus:outline-none"
-              />
-              <select
-                value={(selected.data as AgentNodeData).company}
-                onChange={(e) => {
-                  const c = COMPANIES.find((x) => x.name === e.target.value);
-                  updateSelected({
-                    company: e.target.value,
-                    color: c?.color || (selected.data as AgentNodeData).color,
-                  });
-                }}
-                className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
+              <button
+                type="button"
+                onClick={() => setInspectorOpen(false)}
+                className="text-zinc-500 hover:text-zinc-200 text-xs px-1.5 py-1 rounded border border-zinc-800"
+                title="Hide inspector"
               >
-                {COMPANIES.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={(selected.data as AgentNodeData).role}
-                onChange={(e) => {
-                  const preset = ROLE_PRESETS.find((r) => r.id === e.target.value);
-                  if (preset) {
-                    updateSelected({
-                      role: preset.id,
-                      name: preset.name,
-                      system: preset.system,
-                      team: preset.team,
-                      exposed: preset.defaultExposed,
-                    });
-                  }
-                }}
-                className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
-              >
-                {ROLE_PRESETS.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} · {r.team}
-                    {r.defaultExposed ? ' · Ext' : ''}
-                  </option>
-                ))}
-              </select>
-              <label className="flex items-center gap-2 text-xs text-zinc-400">
-                <input
-                  type="checkbox"
-                  checked={(selected.data as AgentNodeData).exposed}
-                  onChange={(e) => updateSelected({ exposed: e.target.checked })}
-                />
-                External interface (cross-company / inter-network)
-              </label>
-              <input
-                value={(selected.data as AgentNodeData).network || ''}
-                onChange={(e) =>
-                  updateSelected({
-                    network: e.target.value.trim() || undefined,
-                  })
-                }
-                placeholder="Network id (research | computation | creative)"
-                className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none font-mono"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={(selected.data as AgentNodeData).provider}
-                  onChange={(e) => {
-                    const provider = e.target.value as Provider;
-                    updateSelected({ provider, model: MODELS[provider][0].id });
-                  }}
-                  className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
-                >
-                  <option value="xai">xAI</option>
-                  <option value="openai">OpenAI</option>
-                  <option value="anthropic">Anthropic</option>
-                </select>
-                <select
-                  value={(selected.data as AgentNodeData).model}
-                  onChange={(e) => updateSelected({ model: e.target.value })}
-                  className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
-                >
-                  {MODELS[(selected.data as AgentNodeData).provider].map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <textarea
-                value={(selected.data as AgentNodeData).system}
-                onChange={(e) => updateSelected({ system: e.target.value })}
-                rows={4}
-                className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none text-zinc-400"
-              />
+                ›
+              </button>
             </div>
-          )}
 
-          {(outcome || log.length > 0 || hops.length > 0) && (
-            <div className="p-4 space-y-4 flex-1">
-              {meshSession && (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2 space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider text-indigo-400/90">
-                    Mesh session
-                  </p>
-                  <p className="text-[11px] text-zinc-400 font-mono">
-                    {meshSession.protocol} · {meshSession.transport}
-                  </p>
-                  <p className="text-[10px] text-zinc-600 font-mono truncate">
-                    epoch {meshSession.epochId}
-                  </p>
-                  {primaryNetwork && (
-                    <p className="text-[11px] text-zinc-400">
-                      Chief → <span className="text-zinc-200">{primaryNetwork}</span>
+            <div className="flex-1 overflow-y-auto">
+              {inspectorTab === 'configure' && (
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                      {selected ? 'Selected agent' : 'No agent selected'}
+                    </h3>
+                    {selected && (
+                      <button
+                        type="button"
+                        onClick={removeSelected}
+                        className="text-[11px] text-zinc-600 hover:text-red-400"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  {!selected && (
+                    <p className="text-xs text-zinc-600 leading-relaxed">
+                      Click a node on the canvas, or add one from the Agent library.
                     </p>
+                  )}
+
+                  {selected && (
+                    <>
+                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                        Agent name
+                      </label>
+                      <input
+                        value={(selected.data as AgentNodeData).name}
+                        onChange={(e) => updateSelected({ name: e.target.value })}
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-sm border border-zinc-800 focus:outline-none focus:border-violet-500/40"
+                      />
+                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                        Role
+                      </label>
+                      <select
+                        value={(selected.data as AgentNodeData).role}
+                        onChange={(e) => {
+                          const preset = ROLE_PRESETS.find((r) => r.id === e.target.value);
+                          if (preset) {
+                            updateSelected({
+                              role: preset.id,
+                              name: preset.name,
+                              system: preset.system,
+                              team: preset.team,
+                              exposed: preset.defaultExposed,
+                            });
+                          }
+                        }}
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
+                      >
+                        {ROLE_PRESETS.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.name} · {r.team}
+                            {r.defaultExposed ? ' · Ext' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                        Company
+                      </label>
+                      <select
+                        value={(selected.data as AgentNodeData).company}
+                        onChange={(e) => {
+                          const c = COMPANIES.find((x) => x.name === e.target.value);
+                          updateSelected({
+                            company: e.target.value,
+                            color: c?.color || (selected.data as AgentNodeData).color,
+                          });
+                        }}
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
+                      >
+                        {COMPANIES.map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="flex items-center gap-2 text-xs text-zinc-400">
+                        <input
+                          type="checkbox"
+                          checked={(selected.data as AgentNodeData).exposed}
+                          onChange={(e) => updateSelected({ exposed: e.target.checked })}
+                        />
+                        External interface (cross-company / inter-network)
+                      </label>
+                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                        Network id
+                      </label>
+                      <input
+                        value={(selected.data as AgentNodeData).network || ''}
+                        onChange={(e) =>
+                          updateSelected({
+                            network: e.target.value.trim() || undefined,
+                          })
+                        }
+                        placeholder="research | computation | creative"
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none font-mono"
+                      />
+                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                        Provider · model
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          value={(selected.data as AgentNodeData).provider}
+                          onChange={(e) => {
+                            const provider = e.target.value as Provider;
+                            updateSelected({ provider, model: MODELS[provider][0].id });
+                          }}
+                          className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
+                        >
+                          <option value="xai">xAI</option>
+                          <option value="openai">OpenAI</option>
+                          <option value="anthropic">Anthropic</option>
+                        </select>
+                        <select
+                          value={(selected.data as AgentNodeData).model}
+                          onChange={(e) => updateSelected({ model: e.target.value })}
+                          className="bg-zinc-950 rounded-lg px-2 py-2 text-xs border border-zinc-800 focus:outline-none"
+                        >
+                          {MODELS[(selected.data as AgentNodeData).provider].map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                        System prompt
+                      </label>
+                      <textarea
+                        value={(selected.data as AgentNodeData).system}
+                        onChange={(e) => updateSelected({ system: e.target.value })}
+                        rows={6}
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none text-zinc-400"
+                      />
+                    </>
                   )}
                 </div>
               )}
-              {hops.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-                    Bus hops
-                  </h3>
-                  <ul className="space-y-1.5">
-                    {hops.map((h) => (
-                      <li
-                        key={h.messageId}
-                        className="text-[10px] text-zinc-500 border-l-2 border-zinc-800 pl-2"
-                      >
-                        <span
-                          className={
-                            h.boundary === 'inter' || h.boundary === 'chief'
-                              ? 'text-amber-500/90'
-                              : 'text-zinc-400'
-                          }
-                        >
-                          [{h.boundary}]
-                        </span>{' '}
-                        {h.from} → {h.to}{' '}
-                        <span className="text-zinc-600">{h.msgType}</span>
-                        <span className="block text-zinc-600">{h.note}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+              {inspectorTab === 'run' && (
+                <div className="p-4 space-y-4">
+                  <textarea
+                    value={task}
+                    onChange={(e) => setTask(e.target.value)}
+                    rows={3}
+                    placeholder="Task for the mesh (chief routes by keywords: research / calc / write…)"
+                    className="w-full bg-transparent text-sm border border-zinc-800 rounded-lg px-3 py-2 focus:outline-none resize-none"
+                  />
+                  <details>
+                    <summary className="text-[11px] text-zinc-600 cursor-pointer list-none">
+                      + Context & connectors
+                    </summary>
+                    <div className="mt-2 space-y-2">
+                      <textarea
+                        value={context}
+                        onChange={(e) => setContext(e.target.value)}
+                        rows={2}
+                        placeholder="Shared notes..."
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
+                      />
+                      <textarea
+                        value={urls}
+                        onChange={(e) => setUrls(e.target.value)}
+                        rows={2}
+                        placeholder="URLs"
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none resize-none"
+                      />
+                      <label className="flex items-center gap-2 text-[11px] text-zinc-500">
+                        <input
+                          type="checkbox"
+                          checked={postOutcomeToSlack}
+                          onChange={(e) => setPostOutcomeToSlack(e.target.checked)}
+                        />
+                        Slack outcome
+                      </label>
+                      <input
+                        value={slackWebhook}
+                        onChange={(e) => setSlackWebhook(e.target.value)}
+                        placeholder="Slack webhook"
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
+                      />
+                      <input
+                        value={genericWebhook}
+                        onChange={(e) => setGenericWebhook(e.target.value)}
+                        placeholder="Zapier webhook"
+                        className="w-full bg-zinc-950 rounded-lg px-3 py-2 text-xs border border-zinc-800 focus:outline-none"
+                      />
+                    </div>
+                  </details>
+
+                  <button
+                    type="button"
+                    onClick={run}
+                    disabled={running || !task.trim()}
+                    className="w-full h-10 rounded-lg bg-white text-black text-sm font-medium disabled:opacity-30"
+                  >
+                    {running ? 'Running mesh…' : 'Run mesh'}
+                  </button>
+                  {error && <p className="text-xs text-red-400">{error}</p>}
+                  <p className="text-[10px] text-zinc-600">
+                    Chief routes the primary network; inter-network hops use the bus. Dashed amber =
+                    Ext only.
+                  </p>
+
+                  {(outcome || log.length > 0 || hops.length > 0) && (
+                    <div className="space-y-4 pt-2 border-t border-zinc-800">
+                      {meshSession && (
+                        <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 py-2 space-y-1">
+                          <p className="text-[10px] uppercase tracking-wider text-violet-400/90">
+                            Mesh session
+                          </p>
+                          <p className="text-[11px] text-zinc-400 font-mono">
+                            {meshSession.protocol} · {meshSession.transport}
+                          </p>
+                          <p className="text-[10px] text-zinc-600 font-mono truncate">
+                            epoch {meshSession.epochId}
+                          </p>
+                          {primaryNetwork && (
+                            <p className="text-[11px] text-zinc-400">
+                              Chief → <span className="text-zinc-200">{primaryNetwork}</span>
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {hops.length > 0 && (
+                        <div>
+                          <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                            Bus hops
+                          </h3>
+                          <ul className="space-y-1.5">
+                            {hops.map((h) => (
+                              <li
+                                key={h.messageId}
+                                className="text-[10px] text-zinc-500 border-l-2 border-zinc-800 pl-2"
+                              >
+                                <span
+                                  className={
+                                    h.boundary === 'inter' || h.boundary === 'chief'
+                                      ? 'text-amber-500/90'
+                                      : 'text-zinc-400'
+                                  }
+                                >
+                                  [{h.boundary}]
+                                </span>{' '}
+                                {h.from} → {h.to}{' '}
+                                <span className="text-zinc-600">{h.msgType}</span>
+                                <span className="block text-zinc-600">{h.note}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {outcome && (
+                        <div>
+                          <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
+                            Outcome
+                          </h3>
+                          <p className="text-xs text-zinc-300 whitespace-pre-wrap">{outcome}</p>
+                        </div>
+                      )}
+                      {log.map((entry, i) => (
+                        <div key={entry.id || i}>
+                          <div className="flex flex-wrap gap-2 text-[11px] mb-1">
+                            <span className="text-zinc-500">{entry.agent}</span>
+                            {entry.network && (
+                              <span className="text-violet-400/80">net:{entry.network}</span>
+                            )}
+                            <span className="text-zinc-600">
+                              {entry.provider} · {entry.model}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-400 whitespace-pre-wrap">{entry.output}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-              {outcome && (
-                <div>
-                  <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Outcome</h3>
-                  <p className="text-xs text-zinc-300 whitespace-pre-wrap">{outcome}</p>
-                </div>
-              )}
-              {log.map((entry, i) => (
-                <div key={entry.id || i}>
-                  <div className="flex flex-wrap gap-2 text-[11px] mb-1">
-                    <span className="text-zinc-500">{entry.agent}</span>
-                    {entry.network && (
-                      <span className="text-indigo-400/80">net:{entry.network}</span>
-                    )}
-                    <span className="text-zinc-600">
-                      {entry.provider} · {entry.model}
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-400 whitespace-pre-wrap">{entry.output}</p>
-                </div>
-              ))}
             </div>
-          )}
+          </div>
         </aside>
       </div>
     </div>
