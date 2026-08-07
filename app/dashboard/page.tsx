@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { UserMenu, loadUserPrefs } from '@/components/UserMenu';
+import { AutoGrowTextarea } from '@/components/AutoGrowTextarea';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -2318,31 +2319,40 @@ function Dashboard() {
 
               {inspectorTab === 'run' && (
                 <div className="p-4 space-y-4">
-                  <textarea
+                  <label className="block text-[10px] text-zinc-500 uppercase tracking-wider">
+                    Task
+                  </label>
+                  <AutoGrowTextarea
                     value={task}
                     onChange={(e) => setTask(e.target.value)}
-                    rows={3}
+                    minRows={3}
+                    minHeight={72}
+                    maxHeight={420}
                     placeholder="Task for the mesh (chief routes by keywords: research / calc / write…)"
-                    className="w-full bg-transparent text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none resize-none"
+                    className="w-full bg-white text-sm text-zinc-900 border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:border-violet-400 leading-relaxed"
                   />
                   <details>
                     <summary className="text-[11px] text-zinc-500 cursor-pointer list-none">
                       + Context & URLs
                     </summary>
                     <div className="mt-2 space-y-2">
-                      <textarea
+                      <AutoGrowTextarea
                         value={context}
                         onChange={(e) => setContext(e.target.value)}
-                        rows={2}
+                        minRows={2}
+                        minHeight={52}
+                        maxHeight={240}
                         placeholder="Shared notes..."
-                        className="w-full bg-white rounded-lg px-3 py-2 text-xs border border-zinc-200 focus:outline-none resize-none"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-xs text-zinc-800 border border-zinc-200 focus:outline-none focus:border-violet-400 leading-relaxed"
                       />
-                      <textarea
+                      <AutoGrowTextarea
                         value={urls}
                         onChange={(e) => setUrls(e.target.value)}
-                        rows={2}
-                        placeholder="URLs"
-                        className="w-full bg-white rounded-lg px-3 py-2 text-xs border border-zinc-200 focus:outline-none resize-none"
+                        minRows={2}
+                        minHeight={52}
+                        maxHeight={160}
+                        placeholder="URLs (one per line)"
+                        className="w-full bg-white rounded-lg px-3 py-2 text-xs text-zinc-800 border border-zinc-200 focus:outline-none focus:border-violet-400 font-mono leading-relaxed"
                       />
                       <p className="text-[10px] text-zinc-500 leading-relaxed">
                         Outbound actions: header →{' '}
