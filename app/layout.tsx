@@ -1,19 +1,18 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: "AgentxForce – Multi-Agent Teams Powered by Grok",
-  description: "Create, connect, and run intelligent agent networks in minutes. Templates, real-time execution, shareable demos.",
+  title: 'AgentForce',
+  description: 'Multi-agent graphs with BYOK, auth, and token routing',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

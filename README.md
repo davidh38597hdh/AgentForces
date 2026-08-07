@@ -1,26 +1,45 @@
-# AgentxForce
+# AgentForce
 
-**Multi-Agent Teams Powered by Grok**
+Multi-agent graph orchestration with per-agent model choice, BYOK API keys, and token routing.
 
-Create, connect, and run intelligent agent networks in minutes. No complex frameworks. Templates, real-time execution, shareable demos.
+## Features
 
-## Status
-- Landing + Waitlist
-- Core Grok agent streaming dashboard live
-- Sequential multi-agent orchestration next
+- **Multi-provider agents** — xAI (Grok), OpenAI, Anthropic per node
+- **Connect nodes** — directed graph; topological execution
+- **Roles** — Researcher, Coder, Financial Analyst, Analyst, Writer, Critic
+- **BYOK** — paste your API keys in the dashboard (browser storage)
+- **Token router** — control plane → user keys → server env
+- **Auth** — Google + email magic link (NextAuth)
+- **Connectors** — URL fetch, Slack webhook, generic webhook (Zapier)
 
-## Tech
-- Next.js 15 + TypeScript + Tailwind
-- Grok / xAI primary via @ai-sdk/xai
-- Vercel deployment
+## Setup
 
-## Development
 ```bash
 npm install
 npm run dev
 ```
 
-Requires `XAI_API_KEY` in environment for real Grok calls.
+### Environment variables
 
-## Vision
-A clean, shareable multi-agent orchestrator for builders who want real agent teams without the boilerplate.
+| Variable | Required | Purpose |
+|----------|----------|----------|
+| `AUTH_SECRET` | For auth | NextAuth secret |
+| `GOOGLE_CLIENT_ID` | Google login | OAuth |
+| `GOOGLE_CLIENT_SECRET` | Google login | OAuth |
+| `EMAIL_SERVER` | Email login | SMTP |
+| `EMAIL_FROM` | Email login | From address |
+| `XAI_API_KEY` | Optional | Server fallback for Grok |
+| `OPENAI_API_KEY` | Optional | Server fallback |
+| `ANTHROPIC_API_KEY` | Optional | Server fallback |
+| `TOKEN_CONTROL_URL` | Optional | Future central key vault |
+| `TOKEN_CONTROL_SECRET` | Optional | Auth for control plane |
+
+## Deploy
+
+Vercel: connect this repo, set env vars, deploy.
+
+Domain: agentforceapp.com (if configured)
+
+## License
+
+Private / all rights reserved unless stated otherwise.
