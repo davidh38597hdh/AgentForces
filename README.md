@@ -28,7 +28,8 @@ See [docs/MERGE.md](docs/MERGE.md) for architecture and status.
 - **Companies & teams** — multi-org graphs with controlled external interfaces  
 - **BYOK** — API keys in the dashboard (browser storage)  
 - **Token router** — control plane → user keys → server env  
-- **Auth** — optional (Google OAuth not enabled yet; portal is open by default)  
+- **Auth** — Google OAuth; **required in production** (no guest mesh)  
+- **Security** — see [docs/SECURITY.md](docs/SECURITY.md) (mesh AEAD Phase 2)  
 - **Connectors** — URL fetch, Slack webhook, generic webhook  
 
 ## Setup

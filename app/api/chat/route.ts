@@ -1,10 +1,14 @@
 import { xai } from '@ai-sdk/xai';
 import { streamText, convertToCoreMessages } from 'ai';
+import { requireSession } from '@/lib/require-session';
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
+    const gate = await requireSession();
+    if (!gate.ok) return gate.response;
+
     const body = await req.json();
     const messages = body.messages ?? [];
     const system =
@@ -18,12 +22,12 @@ export async function POST(req: Request) {
     });
 
     return result.toDataStreamResponse();
-  } catch (error: any) {
-    console.error('Chat API error:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Chat API error:', message.replace(/sk-[a-zA-Z0-9_-]+/g, '[redacted]'));
     return new Response(
       JSON.stringify({
         error: 'Failed to stream response',
-        details: error?.message || String(error),
       }),
       {
         status: 500,

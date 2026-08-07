@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "ui": "next dev",
+    "dev": "next dev --hostname 127.0.0.1",
+    "ui": "next dev --hostname 127.0.0.1",
     "build": "next build",
-    "start": "next start",
-    "start:standalone": "node .next/standalone/server.js",
+    "start": "next start --hostname 127.0.0.1",
+    "start:standalone": "HOSTNAME=127.0.0.1 node .next/standalone/server.js",
     "docker:build": "docker build -t agentforces:local .",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down"

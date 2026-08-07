@@ -81,11 +81,13 @@ Do not treat Streamlit Orchestrate / Python `amep-network` as this repo’s depl
 
 | Mode | When | Behavior |
 |------|------|----------|
-| **Open** | Google env unset, or `AUTH_REQUIRED=false` | Portal + dashboard guest-accessible |
-| **Gated (default when Google configured)** | `GOOGLE_CLIENT_*` + `AUTH_SECRET` set | Middleware enforces session; **Continue with Google** on `/login` |
+| **Production** | `VERCEL_ENV=production` (or Docker prod) | **Always** require Google session — no guest mesh |
+| **Local/dev** | Google unset or `AUTH_REQUIRED=false` | Guest allowed for velocity |
+| **Gated local** | Google credentials present | Middleware enforces session |
 
 - **Do not** re-add email / magic-link unless explicitly requested.
 - Google redirect URI: `https://agentxforces.com/api/auth/callback/google` (+ localhost for dev).
+- Security model: [docs/SECURITY.md](docs/SECURITY.md). Mesh AEAD is **Phase 2** (`in_memory` today).
 
 ---
 

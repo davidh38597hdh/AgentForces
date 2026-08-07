@@ -1,12 +1,23 @@
-import { auth } from '@/auth';
 import { runMesh, type MeshAgent, type MeshEdge } from '@/lib/mesh';
 import type { UserKeyBag } from '@/lib/token-router';
+import { requireSession } from '@/lib/require-session';
 
 export const maxDuration = 120;
 
+function sanitizeError(message: string): string {
+  // Never echo secrets in API errors
+  return message
+    .replace(/sk-[a-zA-Z0-9_-]+/g, '[redacted]')
+    .replace(/xai-[a-zA-Z0-9_-]+/gi, '[redacted]')
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]');
+}
+
 export async function POST(req: Request) {
   try {
-    const session = await auth().catch(() => null);
+    const gate = await requireSession();
+    if (!gate.ok) return gate.response;
+    const session = gate.session;
+
     const body = await req.json();
     const agents: MeshAgent[] = (body.agents || []).slice(0, 12);
     const edges: MeshEdge[] = body.edges || [];
@@ -32,6 +43,9 @@ export async function POST(req: Request) {
       chiefRoute,
       tenantId: session?.user?.email || 'tenant-default',
     });
+
+    // Drop any chance of keys lingering on the body reference
+    void userKeys;
 
     const outcome = result.outcome;
 
@@ -76,12 +90,19 @@ export async function POST(req: Request) {
       primaryNetwork: result.primaryNetwork,
       outcome,
       final: result.final,
-      // bus history ids only (avoid large payloads)
       busMessageCount: result.busHistory.length,
+      security: {
+        meshTransport: result.session.transport,
+        sealedHops: false,
+        note:
+          result.session.transport === 'in_memory'
+            ? 'Mesh hops are not AEAD-sealed yet (AMEP metadata only).'
+            : 'Mesh hops use AEAD transport.',
+      },
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Orchestration failed';
-    console.error('Orchestrate error:', error);
-    return Response.json({ error: message }, { status: 500 });
+    console.error('Orchestrate error:', sanitizeError(message));
+    return Response.json({ error: sanitizeError(message) }, { status: 500 });
   }
 }

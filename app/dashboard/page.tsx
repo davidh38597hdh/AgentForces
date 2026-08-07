@@ -49,6 +49,11 @@ type SessionMeta = {
   chiefHandle: string;
   transport: string;
 };
+type SecurityMeta = {
+  meshTransport?: string;
+  sealedHops?: boolean;
+  note?: string;
+};
 
 const KEYS_STORAGE = 'agentforces_user_keys_v1';
 
@@ -236,6 +241,7 @@ function Dashboard() {
   const [log, setLog] = useState<LogEntry[]>([]);
   const [hops, setHops] = useState<HopEntry[]>([]);
   const [meshSession, setMeshSession] = useState<SessionMeta | null>(null);
+  const [securityMeta, setSecurityMeta] = useState<SecurityMeta | null>(null);
   const [primaryNetwork, setPrimaryNetwork] = useState<string | null>(null);
   const [outcome, setOutcome] = useState('');
   const [running, setRunning] = useState(false);
@@ -439,6 +445,7 @@ function Dashboard() {
     setLog([]);
     setHops([]);
     setMeshSession(null);
+    setSecurityMeta(null);
     setPrimaryNetwork(null);
     setOutcome('');
     try {
@@ -496,10 +503,16 @@ function Dashboard() {
       setLog(data.log || []);
       setHops(data.hops || []);
       setMeshSession(data.session || null);
+      setSecurityMeta(data.security || null);
       setPrimaryNetwork(data.primaryNetwork || null);
       setOutcome(data.outcome || data.final || '');
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Run failed');
+      const msg = e instanceof Error ? e.message : 'Run failed';
+      if (msg.includes('401') || msg.toLowerCase().includes('authentication')) {
+        setError('Sign in required to run the mesh.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setRunning(false);
     }
@@ -1032,6 +1045,12 @@ function Dashboard() {
                           <p className="text-[10px] text-zinc-600 font-mono truncate">
                             epoch {meshSession.epochId}
                           </p>
+                          {(securityMeta?.note || meshSession.transport === 'in_memory') && (
+                            <p className="text-[10px] text-amber-500/80 mt-1">
+                              {securityMeta?.note ||
+                                'Mesh hops not AEAD-sealed yet (metadata only).'}
+                            </p>
+                          )}
                           {primaryNetwork && (
                             <p className="text-[11px] text-zinc-400">
                               Chief → <span className="text-zinc-200">{primaryNetwork}</span>

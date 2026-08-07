@@ -1,12 +1,23 @@
 import NextAuth from 'next-auth';
 import Google from 'next-auth/providers/google';
+import {
+  assertProductionAuthConfig,
+  isGoogleAuthConfigured,
+  isProduction,
+} from '@/lib/auth-mode';
 
-/**
- * NextAuth — Google provider when GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET are set.
- * AUTH_SECRET recommended in production; fallback only for local open mode.
- */
+// Fail closed on production misconfig at module load
+try {
+  assertProductionAuthConfig();
+} catch (e) {
+  if (isProduction()) {
+    console.error(e instanceof Error ? e.message : e);
+  }
+}
+
 const googleId = process.env.GOOGLE_CLIENT_ID?.trim();
 const googleSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+const authSecret = process.env.AUTH_SECRET?.trim();
 
 const providers = [];
 
@@ -17,12 +28,38 @@ if (googleId && googleSecret) {
       clientSecret: googleSecret,
     })
   );
+} else if (isProduction()) {
+  console.error(
+    'AgentForces: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET required in production'
+  );
 }
+
+const useSecureCookies = isProduction();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
-  secret: process.env.AUTH_SECRET?.trim() || 'agentforces-dev-open-mode-not-for-production',
-  session: { strategy: 'jwt' },
+  secret:
+    authSecret ||
+    (isProduction()
+      ? undefined // NextAuth will error without secret in prod — intentional
+      : 'agentforces-dev-open-mode-not-for-production'),
+  session: {
+    strategy: 'jwt',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  },
+  cookies: useSecureCookies
+    ? {
+        sessionToken: {
+          name: `__Secure-authjs.session-token`,
+          options: {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            secure: true,
+          },
+        },
+      }
+    : undefined,
   pages: {
     signIn: '/login',
   },
@@ -48,3 +85,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   trustHost: true,
 });
+
+export { isGoogleAuthConfigured };

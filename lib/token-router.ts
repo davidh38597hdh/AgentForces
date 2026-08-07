@@ -82,3 +82,11 @@ export async function resolveProviderKey(
     `No API key for ${provider}. Add it in Settings (API keys) or set ${ENV_MAP[provider]}.`
   );
 }
+
+/** Redact key-like substrings from log/error strings. */
+export function redactSecrets(text: string): string {
+  return text
+    .replace(/sk-[a-zA-Z0-9_-]{10,}/g, '[redacted]')
+    .replace(/xai-[a-zA-Z0-9_-]{10,}/gi, '[redacted]')
+    .replace(/Bearer\s+\S+/gi, 'Bearer [redacted]');
+}

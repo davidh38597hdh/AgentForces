@@ -14,12 +14,14 @@ Copy [`.env.example`](../.env.example) and set at least:
 
 | Variable | Notes |
 |----------|--------|
-| `AUTH_URL` / `NEXT_PUBLIC_APP_URL` | Public HTTPS origin (no trailing slash) |
+| `AUTH_URL` / `NEXT_PUBLIC_APP_URL` | `https://agentxforces.com` (no trailing slash) |
 | `AUTH_TRUST_HOST=true` | **Required** on non-Vercel / reverse proxies |
-| `AUTH_REQUIRED` | Default open access — leave `false` until Google auth ships |
+| `AUTH_SECRET` | **Required in production** |
+| `GOOGLE_CLIENT_ID` | **Required in production** (not `GOOGLE_CLIENT`) |
+| `GOOGLE_CLIENT_SECRET` | **Required in production** |
 | Optional provider keys | `XAI_API_KEY`, etc. (BYOK still works in UI) |
 
-**Auth note:** Google sign-in is **not** product-ready. Portal and mesh work as **guest** without OAuth. When you enable Google later, set `GOOGLE_*`, `AUTH_SECRET`, and `AUTH_REQUIRED=true`.
+**Auth:** Production **always** requires Google login for portal/dashboard/mesh APIs. Local may use guest. Full security notes: [SECURITY.md](./SECURITY.md).
 
 Health check (all non-Vercel targets): `GET /api/health` → `{ ok: true, ... }`.
 

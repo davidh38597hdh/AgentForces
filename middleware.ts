@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { isAuthRequired } from '@/lib/auth-mode';
 
+/**
+ * Production: always require session for portal/dashboard.
+ * Non-prod: follow isAuthRequired() (guest allowed when Google unset).
+ */
 export default auth((req) => {
-  // Guest mode when Google is not configured (or AUTH_REQUIRED=false)
   if (!isAuthRequired()) {
     return NextResponse.next();
   }

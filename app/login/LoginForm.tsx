@@ -97,9 +97,10 @@ export function LoginForm({
           {pending ? 'Redirecting…' : 'Continue with Google'}
         </button>
 
+        {/* Guest only in non-production when auth is not required */}
         {!authRequired && (
           <Link href={safeCallback} className="af-btn-ghost w-full mt-3">
-            Continue as guest
+            Continue as guest (local/dev only)
           </Link>
         )}
 
